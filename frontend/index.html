@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FluxGrid OS - Akul Powers</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-icon">⚡</div>
+      <div><strong>FLUXGRID OS</strong><span>by Akul Powers</span></div>
+    </div>
+    <nav>
+      <button class="nav-btn active" data-target="dashboard">Control Room</button>
+      <button class="nav-btn" data-target="nodes">Node Registry</button>
+      <button class="nav-btn" data-target="trade">P2P Energy Trading</button>
+      <button class="nav-btn" data-target="audit">Audit Logs</button>
+    </nav>
+    <div class="side-note">
+      <span class="dot"></span>
+      <div><strong>Demo Mode</strong><small>Java backend will replace mock data</small></div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">SMART MICRO-GRID OPERATIONS</p>
+        <h1>Local Energy Control Room</h1>
+      </div>
+      <button id="refreshBtn" class="secondary-btn">Refresh Data</button>
+    </header>
+
+    <section id="dashboard" class="page-section active-section">
+      <div class="section-heading">
+        <div><p class="eyebrow">SYSTEM OVERVIEW</p><h2>The grid at a glance</h2></div>
+        <span id="gridStatusBadge" class="badge warning">WARNING</span>
+      </div>
+
+      <div class="stats-grid">
+        <article class="stat-card"><span>Total Generation</span><strong id="generationValue">—</strong><small>kW</small></article>
+        <article class="stat-card"><span>Total Consumption</span><strong id="consumptionValue">—</strong><small>kW</small></article>
+        <article class="stat-card"><span>Net Reserve</span><strong id="reserveValue">—</strong><small>kW</small></article>
+        <article class="stat-card"><span>Active Nodes</span><strong id="activeNodesValue">—</strong><small>nodes</small></article>
+        <article class="stat-card"><span>Dynamic Price</span><strong id="priceValue">—</strong><small>₹ / kWh</small></article>
+        <article class="stat-card"><span>Renewable Share</span><strong id="renewableValue">—</strong><small>%</small></article>
+      </div>
+
+      <div class="two-column">
+        <article class="panel">
+          <div class="panel-title"><h3>Generation vs Consumption</h3><span>Current snapshot</span></div>
+          <div class="bar-chart">
+            <div class="bar-row"><label>Generation</label><div class="bar-track"><div id="generationBar" class="bar generation"></div></div><b id="generationBarText">0 kW</b></div>
+            <div class="bar-row"><label>Consumption</label><div class="bar-track"><div id="consumptionBar" class="bar consumption"></div></div><b id="consumptionBarText">0 kW</b></div>
+          </div>
+          <div class="daily-grid">
+            <div><span>Generated Today</span><strong id="generatedToday">— kWh</strong></div>
+            <div><span>Consumed Today</span><strong id="consumedToday">— kWh</strong></div>
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-title"><h3>Dynamic Pricing Breakdown</h3><span>Calculated by Java later</span></div>
+          <div class="price-big"><span>Current Price</span><strong id="pricingCurrent">₹0.00/kWh</strong></div>
+          <dl class="pricing-list">
+            <div><dt>Base Rate</dt><dd id="baseRate">—</dd></div>
+            <div><dt>Supply-Demand Factor</dt><dd id="demandFactor">—</dd></div>
+            <div><dt>Peak Hour Factor</dt><dd id="peakFactor">—</dd></div>
+            <div><dt>Weather Factor</dt><dd id="weatherFactor">—</dd></div>
+          </dl>
+          <p id="pricingExplanation" class="muted"></p>
+        </article>
+      </div>
+
+      <article class="panel">
+        <div class="panel-title"><h3>Grid Stability & Load Shedding</h3><span>Priority 1 nodes are protected</span></div>
+        <div id="stabilityMessage" class="stability-message"></div>
+        <div id="priorityCards" class="priority-grid"></div>
+      </article>
+    </section>
+
+    <section id="nodes" class="page-section">
+      <div class="section-heading">
+        <div><p class="eyebrow">NODE MANAGEMENT</p><h2>Node Registry</h2></div>
+        <button id="openNodeModal" class="primary-btn">+ Register Node</button>
+      </div>
+      <div class="filters">
+        <input id="nodeSearch" type="text" placeholder="Search ID, name or location" />
+        <select id="typeFilter"><option value="">All Types</option><option>SOLAR_PRODUCER</option><option>CONSUMER</option><option>EV_STATION</option><option>BATTERY_STORAGE</option></select>
+        <select id="statusFilter"><option value="">All Statuses</option><option>ONLINE</option><option>OFFLINE</option><option>THROTTLED</option></select>
+        <select id="priorityFilter"><option value="">All Priorities</option><option value="1">1 - Critical</option><option value="2">2 - High</option><option value="3">3 - Normal</option><option value="4">4 - Low</option></select>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Node</th><th>Type</th><th>Location</th><th>Energy (kWh)</th><th>Capacity (kWh)</th><th>Output / Load (kW)</th><th>Balance</th><th>Priority</th><th>Status</th></tr></thead>
+          <tbody id="nodesTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="trade" class="page-section">
+      <div class="section-heading"><div><p class="eyebrow">ENERGY MARKET</p><h2>P2P Energy Trading</h2></div></div>
+      <div class="two-column trade-layout">
+        <article class="panel">
+          <h3>Execute Trade</h3>
+          <form id="tradeForm" class="form-stack">
+            <label>Seller Node<select id="sellerSelect" required></select></label>
+            <label>Buyer Node<select id="buyerSelect" required></select></label>
+            <label>Energy Amount (kWh)<input id="tradeAmount" type="number" min="0.1" step="0.1" value="10" required /></label>
+            <div class="trade-summary"><span>Current Price</span><strong id="tradePrice">₹0.00/kWh</strong></div>
+            <div class="trade-summary"><span>Estimated Cost</span><strong id="estimatedCost">₹0.00</strong></div>
+            <button type="submit" class="primary-btn full">Execute Trade</button>
+          </form>
+          <p class="muted small">In the final project this button will call the Java backend. Java will validate the trade and JDBC will commit or rollback the PostgreSQL transaction.</p>
+        </article>
+        <article class="panel">
+          <h3>Latest Trade Result</h3>
+          <div id="tradeResult" class="empty-state">No trade executed in this session.</div>
+        </article>
+      </div>
+    </section>
+
+    <section id="audit" class="page-section">
+      <div class="section-heading"><div><p class="eyebrow">SYSTEM HISTORY</p><h2>Audit Logs</h2></div></div>
+      <div id="auditList" class="audit-list"></div>
+    </section>
+  </main>
+
+  <dialog id="nodeModal">
+    <form id="nodeForm" class="modal-card">
+      <div class="modal-head"><h3>Register New Node</h3><button id="closeNodeModal" type="button">×</button></div>
+      <label>Node Name<input id="newNodeName" required /></label>
+      <label>Type<select id="newNodeType"><option>SOLAR_PRODUCER</option><option>CONSUMER</option><option>EV_STATION</option><option>BATTERY_STORAGE</option></select></label>
+      <label>Location<input id="newNodeLocation" required /></label>
+      <label>Maximum Capacity (kWh)<input id="newNodeCapacity" type="number" min="0" value="50" required /></label>
+      <label>Priority<select id="newNodePriority"><option value="1">1 - Critical</option><option value="2">2 - High</option><option value="3" selected>3 - Normal</option><option value="4">4 - Low</option></select></label>
+      <button class="primary-btn full" type="submit">Register Node</button>
+    </form>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
