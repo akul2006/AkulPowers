@@ -94,10 +94,10 @@ const emptyNode: NodeInput = {
   priority: 3,
 };
 const navItems = [
-  { label: "Control room", icon: Activity, id: "control-room" },
-  { label: "Node registry", icon: Cpu, id: "node-registry" },
-  { label: "P2P energy trading", icon: ArrowLeftRight, id: "market-execution" },
-  { label: "Audit logs", icon: DatabaseZap, id: "audit-stream" },
+  { label: "Control Room", icon: Activity, id: "control-room" },
+  { label: "Node Registry", icon: Cpu, id: "node-registry" },
+  { label: "P2P Energy Trading", icon: ArrowLeftRight, id: "market-execution" },
+  { label: "Audit Logs", icon: DatabaseZap, id: "audit-stream" },
 ];
 
 function formatNumber(value: number | undefined, fractionDigits = 1) {
@@ -465,10 +465,10 @@ function AppShell() {
               </span>
               <span>
                 <span className="block text-sm font-extrabold tracking-tight">
-                  NORTHSTAR
+                  FLUXGRID OS
                 </span>
-                <span className="mono block text-[9px] uppercase tracking-[.22em] text-sidebar-foreground/55">
-                  micro-grid OS
+                <span className="mono block text-[9px] tracking-[.22em] text-sidebar-foreground/55">
+                  by Akul Powers
                 </span>
               </span>
             </button>
@@ -535,7 +535,7 @@ function AppShell() {
               <div className="min-w-0">
                 <p className="truncate text-xs font-bold">Grid operations</p>
                 <p className="truncate text-[10px] text-sidebar-foreground/45">
-                  coordinator / east sector
+                  Grid Administrator
                 </p>
               </div>
             </div>
@@ -565,7 +565,7 @@ function AppShell() {
                   Grid operations
                 </p>
                 <h1 className="text-base font-extrabold tracking-tight sm:text-lg">
-                  Smart micro-grid control room
+                  Smart Micro-Grid Operations
                 </h1>
               </div>
             </div>
@@ -617,8 +617,7 @@ function AppShell() {
                     The grid, at a glance.
                   </h2>
                   <p className="mt-2 max-w-xl text-sm text-muted-foreground">
-                    Live telemetry and market activity across the Northstar
-                    local energy grid.
+                    Energy monitoring and trading activity across the Local Micro-Grid.
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -841,7 +840,7 @@ function AppShell() {
                 />
               </section>
               <footer className="flex flex-col justify-between gap-2 border-t py-5 text-[10px] text-muted-foreground sm:flex-row">
-                <span className="mono">NORTHSTAR // OPERATOR BUILD 1.0.7</span>
+                <span className="mono">FLUXGRID OS — by Akul Powers</span>
                 <span className="flex items-center gap-1.5">
                   <ShieldCheck size={12} className="text-primary" /> Energy
                   monitoring & P2P trading

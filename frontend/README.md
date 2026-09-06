@@ -1,12 +1,20 @@
-# Smart Micro-Grid frontend
+# FluxGrid OS — Smart Micro-Grid Energy & P2P Trading Engine
 
-The existing Northstar dashboard, dark theme, `/` route, and section navigation are preserved. The main UI is `artifacts/microgrid-trading-engine/src/App.tsx`: `AppShell` (dashboard), `NodeRegistry`, `NodeModal`, `TradePanel`, and `AuditFeed`. `PricingPanel` and `GridStability` extend the dashboard using the same cards and styling.
+FluxGrid OS by Akul Powers monitors renewable energy generation and consumption, registered grid nodes, dynamic energy pricing, P2P energy trades, and audit records.
 
-## Run with Java
+The four main modules are **Control Room**, **Node Registry**, **P2P Energy Trading**, and **Audit Logs**. They include pricing breakdowns, grid stability and load-shedding displays, node priorities and filters, and backend-provided trade results. Power uses kW, energy uses kWh, and financial values use ₹.
 
-From this directory, install dependencies with `pnpm install --frozen-lockfile`, then run:
+The frontend uses React, TypeScript, Vite, Tailwind CSS, React Query, Wouter, and Radix UI. Shared API hooks and schemas are generated from OpenAPI with Orval. pnpm manages the workspace. The existing directory layout is retained to preserve imports and builds: application code is in `artifacts/microgrid-trading-engine/src`, assets in its `public` directory, and the API client in `lib/api-client-react`.
+
+The final production architecture is **React → Java backend → JDBC → PostgreSQL**. The TypeScript demo service is for read-only frontend development; it does not execute production transactions.
+
+## Install and run locally
+
+Use Node.js 22.12+ and pnpm 10. From the repository root:
 
 ```powershell
+cd frontend
+pnpm install --frozen-lockfile
 pnpm --filter @workspace/microgrid-trading-engine dev
 ```
 
@@ -23,7 +31,7 @@ After building the frontend and demo service, run `node scripts/demo-smoke.mjs` 
 
 ## Read-only UI demo
 
-The existing Express artifact is now a **read-only fixture service**, not the production backend. In one terminal:
+The existing Express package is a **read-only fixture service**, not the production backend. From `frontend`, in one terminal:
 
 ```powershell
 pnpm --filter @workspace/api-server build
