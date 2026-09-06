@@ -1,144 +1,795 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FluxGrid OS - Akul Powers</title>
+  <title>FluxGrid OS — Smart Micro-Grid Energy & P2P Trading Engine</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <aside class="sidebar">
+  <!-- SIDEBAR NAVIGATION -->
+  <aside class="sidebar" id="sidebar">
     <div class="brand">
-      <div class="brand-icon">⚡</div>
-      <div><strong>FLUXGRID OS</strong><span>by Akul Powers</span></div>
+      <div class="brand-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <strong>FLUXGRID OS</strong>
+        <span>by Akul Powers</span>
+      </div>
     </div>
-    <nav>
-      <button class="nav-btn active" data-target="dashboard">Control Room</button>
-      <button class="nav-btn" data-target="nodes">Node Registry</button>
-      <button class="nav-btn" data-target="trade">P2P Energy Trading</button>
-      <button class="nav-btn" data-target="audit">Audit Logs</button>
+
+    <nav class="sidebar-nav">
+      <button class="nav-btn active" data-target="dashboard">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
+        <span>Control Room</span>
+      </button>
+      <button class="nav-btn" data-target="nodes">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
+        <span>Node Registry</span>
+      </button>
+      <button class="nav-btn" data-target="trade">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
+        <span>P2P Energy Trading</span>
+      </button>
+      <button class="nav-btn" data-target="audit">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+        <span>Audit Logs</span>
+      </button>
     </nav>
-    <div class="side-note">
-      <span class="dot"></span>
-      <div><strong>Demo Mode</strong><small>Java backend will replace mock data</small></div>
+
+    <div class="sidebar-footer">
+      <div class="connection-status">
+        <div class="status-indicator">
+          <span class="status-ping"></span>
+          <span class="status-dot"></span>
+        </div>
+        <div class="connection-info">
+          <span class="conn-title">System Connection</span>
+          <strong class="conn-state">Demo Mode</strong>
+          <small class="conn-sub">Java Backend Placeholder</small>
+        </div>
+      </div>
     </div>
   </aside>
 
-  <main class="main">
+  <!-- MAIN VIEW CONTAINER -->
+  <div class="main-wrapper">
+    <!-- TOP HEADER -->
     <header class="topbar">
-      <div>
-        <p class="eyebrow">SMART MICRO-GRID OPERATIONS</p>
-        <h1>Local Energy Control Room</h1>
+      <div class="topbar-left">
+        <button class="menu-toggle" id="menuToggle" aria-label="Toggle Navigation">
+          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        </button>
+        <div>
+          <h1 id="topbarTitle">Smart Micro-Grid Control Room</h1>
+          <p class="topbar-subtitle">Local renewable energy monitoring and trading</p>
+        </div>
       </div>
-      <button id="refreshBtn" class="secondary-btn">Refresh Data</button>
+
+      <div class="topbar-right">
+        <!-- Grid Status Live Indicator -->
+        <div class="header-status-pill" id="headerGridStatusPill">
+          <span class="pulse-dot"></span>
+          <span id="headerGridStatusText">GRID STABLE</span>
+        </div>
+
+        <!-- Timestamp -->
+        <div class="timestamp-box">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          <span>Updated <b id="lastUpdatedTime">10:42 PM</b></span>
+        </div>
+
+        <!-- Theme Toggle Button -->
+        <button id="themeToggleBtn" class="icon-btn theme-toggle" title="Toggle Light/Dark Theme" aria-label="Toggle Light/Dark Theme">
+          <svg id="themeIconSun" class="theme-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+          <svg id="themeIconMoon" class="theme-icon hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        </button>
+
+        <!-- Refresh Button -->
+        <button id="refreshBtn" class="refresh-btn" title="Refresh Live Metrics">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <polyline points="1 20 1 14 7 14"></polyline>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          </svg>
+          <span>Refresh</span>
+        </button>
+      </div>
     </header>
 
-    <section id="dashboard" class="page-section active-section">
-      <div class="section-heading">
-        <div><p class="eyebrow">SYSTEM OVERVIEW</p><h2>The grid at a glance</h2></div>
-        <span id="gridStatusBadge" class="badge warning">WARNING</span>
-      </div>
-
-      <div class="stats-grid">
-        <article class="stat-card"><span>Total Generation</span><strong id="generationValue">—</strong><small>kW</small></article>
-        <article class="stat-card"><span>Total Consumption</span><strong id="consumptionValue">—</strong><small>kW</small></article>
-        <article class="stat-card"><span>Net Reserve</span><strong id="reserveValue">—</strong><small>kW</small></article>
-        <article class="stat-card"><span>Active Nodes</span><strong id="activeNodesValue">—</strong><small>nodes</small></article>
-        <article class="stat-card"><span>Dynamic Price</span><strong id="priceValue">—</strong><small>₹ / kWh</small></article>
-        <article class="stat-card"><span>Renewable Share</span><strong id="renewableValue">—</strong><small>%</small></article>
-      </div>
-
-      <div class="two-column">
-        <article class="panel">
-          <div class="panel-title"><h3>Generation vs Consumption</h3><span>Current snapshot</span></div>
-          <div class="bar-chart">
-            <div class="bar-row"><label>Generation</label><div class="bar-track"><div id="generationBar" class="bar generation"></div></div><b id="generationBarText">0 kW</b></div>
-            <div class="bar-row"><label>Consumption</label><div class="bar-track"><div id="consumptionBar" class="bar consumption"></div></div><b id="consumptionBarText">0 kW</b></div>
+    <main class="main-content">
+      <!-- ================= 1. CONTROL ROOM / DASHBOARD ================= -->
+      <section id="dashboard" class="page-section active-section">
+        <!-- Section Title Bar -->
+        <div class="section-header">
+          <div>
+            <span class="section-tag">REAL-TIME TELEMETRY</span>
+            <h2>Micro-Grid Operational Overview</h2>
           </div>
-          <div class="daily-grid">
-            <div><span>Generated Today</span><strong id="generatedToday">— kWh</strong></div>
-            <div><span>Consumed Today</span><strong id="consumedToday">— kWh</strong></div>
+          <div class="section-actions">
+            <span id="gridStatusBadge" class="status-badge badge-warning">LOAD SHEDDING</span>
           </div>
-        </article>
+        </div>
 
-        <article class="panel">
-          <div class="panel-title"><h3>Dynamic Pricing Breakdown</h3><span>Calculated by Java later</span></div>
-          <div class="price-big"><span>Current Price</span><strong id="pricingCurrent">₹0.00/kWh</strong></div>
-          <dl class="pricing-list">
-            <div><dt>Base Rate</dt><dd id="baseRate">—</dd></div>
-            <div><dt>Supply-Demand Factor</dt><dd id="demandFactor">—</dd></div>
-            <div><dt>Peak Hour Factor</dt><dd id="peakFactor">—</dd></div>
-            <div><dt>Weather Factor</dt><dd id="weatherFactor">—</dd></div>
-          </dl>
-          <p id="pricingExplanation" class="muted"></p>
-        </article>
+        <!-- 6 Primary Metric Cards -->
+        <div class="metrics-grid">
+          <!-- 1. Total Generation -->
+          <div class="metric-card card-teal">
+            <div class="metric-head">
+              <span class="metric-label">TOTAL GENERATION</span>
+              <div class="metric-icon icon-teal">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg>
+              </div>
+            </div>
+            <div class="metric-body">
+              <div class="metric-number"><span id="generationValue">50.0</span> <span class="metric-unit">kW</span></div>
+              <div class="metric-footer text-teal">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+                <span>Active renewable solar & storage</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. Total Consumption -->
+          <div class="metric-card card-amber">
+            <div class="metric-head">
+              <span class="metric-label">TOTAL CONSUMPTION</span>
+              <div class="metric-icon icon-amber">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"></path><path d="M12 20V4"></path><path d="M6 20v-6"></path></svg>
+              </div>
+            </div>
+            <div class="metric-body">
+              <div class="metric-number"><span id="consumptionValue">60.0</span> <span class="metric-unit">kW</span></div>
+              <div class="metric-footer text-amber">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline><polyline points="17 18 23 18 23 12"></polyline></svg>
+                <span>Live grid-wide energy demand</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. Net Reserve -->
+          <div class="metric-card card-deficit" id="reserveCard">
+            <div class="metric-head">
+              <span class="metric-label">NET RESERVE</span>
+              <div class="metric-icon icon-deficit" id="reserveIconContainer">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              </div>
+            </div>
+            <div class="metric-body">
+              <div class="metric-number"><span id="reserveValue">-10.0</span> <span class="metric-unit">kW</span></div>
+              <div class="metric-footer" id="reserveFooter">
+                <span id="reserveSubtext">⚠ Deficit: Load Shedding Active</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. Active Nodes -->
+          <div class="metric-card card-blue">
+            <div class="metric-head">
+              <span class="metric-label">ACTIVE NODES</span>
+              <div class="metric-icon icon-blue">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+              </div>
+            </div>
+            <div class="metric-body">
+              <div class="metric-number"><span id="activeNodesValue">6 / 7</span> <span class="metric-unit">Online</span></div>
+              <div class="metric-footer text-blue">
+                <span>1 node offline for maintenance</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 5. Dynamic Price -->
+          <div class="metric-card card-purple">
+            <div class="metric-head">
+              <span class="metric-label">DYNAMIC PRICE</span>
+              <div class="metric-icon icon-purple">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+              </div>
+            </div>
+            <div class="metric-body">
+              <div class="metric-number"><span id="priceValue">₹8.25</span> <span class="metric-unit">/ kWh</span></div>
+              <div class="metric-footer text-purple">
+                <span>Peak rate driven by demand</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 6. Grid Status -->
+          <div class="metric-card card-status">
+            <div class="metric-head">
+              <span class="metric-label">GRID STATUS</span>
+              <div class="metric-icon icon-status" id="gridStatusIcon">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+              </div>
+            </div>
+            <div class="metric-body">
+              <div class="metric-number metric-status-text" id="gridStatusText">LOAD SHEDDING</div>
+              <div class="metric-footer text-danger" id="gridStatusFooter">
+                <span>P4 Non-essential throttled</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Two Column Main Dashboard Grid: Energy Flow Chart & Dynamic Pricing Engine -->
+        <div class="dashboard-grid">
+          <!-- ENERGY FLOW CHART PANEL -->
+          <div class="panel-card chart-panel">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">Energy Flow Telemetry</h3>
+                <p class="panel-subtitle">Generation vs Consumption over 24-hour microgrid cycle</p>
+              </div>
+              <div class="chart-legend">
+                <div class="legend-item">
+                  <span class="legend-dot legend-gen"></span>
+                  <span>Generation</span>
+                </div>
+                <div class="legend-item">
+                  <span class="legend-dot legend-cons"></span>
+                  <span>Consumption</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Crisp Responsive SVG Chart -->
+            <div class="chart-container">
+              <svg id="energySvgChart" class="energy-chart-svg" viewBox="0 0 600 240" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="genGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#10b981" stop-opacity="0.35"/>
+                    <stop offset="100%" stop-color="#10b981" stop-opacity="0.0"/>
+                  </linearGradient>
+                  <linearGradient id="consGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.25"/>
+                    <stop offset="100%" stop-color="#f59e0b" stop-opacity="0.0"/>
+                  </linearGradient>
+                </defs>
+
+                <!-- Grid horizontal lines -->
+                <line x1="40" y1="30" x2="580" y2="30" class="chart-grid-line" />
+                <line x1="40" y1="80" x2="580" y2="80" class="chart-grid-line" />
+                <line x1="40" y1="130" x2="580" y2="130" class="chart-grid-line" />
+                <line x1="40" y1="180" x2="580" y2="180" class="chart-grid-line" />
+
+                <!-- Y-axis labels -->
+                <text x="32" y="34" class="chart-axis-text">80 kW</text>
+                <text x="32" y="84" class="chart-axis-text">60 kW</text>
+                <text x="32" y="134" class="chart-axis-text">40 kW</text>
+                <text x="32" y="184" class="chart-axis-text">20 kW</text>
+
+                <!-- Area Fills -->
+                <path id="chartGenArea" class="chart-area-gen" d=""></path>
+                <path id="chartConsArea" class="chart-area-cons" d=""></path>
+
+                <!-- Lines -->
+                <path id="chartGenLine" class="chart-line-gen" d=""></path>
+                <path id="chartConsLine" class="chart-line-cons" d=""></path>
+
+                <!-- Time Axis Labels -->
+                <text x="45" y="215" class="chart-axis-text">00:00</text>
+                <text x="135" y="215" class="chart-axis-text">04:00</text>
+                <text x="225" y="215" class="chart-axis-text">08:00</text>
+                <text x="315" y="215" class="chart-axis-text">12:00</text>
+                <text x="405" y="215" class="chart-axis-text">16:00</text>
+                <text x="495" y="215" class="chart-axis-text">20:00</text>
+                <text x="560" y="215" class="chart-axis-text">Now</text>
+              </svg>
+            </div>
+
+            <!-- Live Bars Snapshot -->
+            <div class="current-snapshot-bars">
+              <div class="bar-item">
+                <div class="bar-info">
+                  <span>Current Generation</span>
+                  <strong id="generationBarText" class="text-teal">50.0 kW</strong>
+                </div>
+                <div class="bar-track">
+                  <div id="generationBar" class="bar-fill fill-teal" style="width: 50%;"></div>
+                </div>
+              </div>
+              <div class="bar-item">
+                <div class="bar-info">
+                  <span>Current Consumption</span>
+                  <strong id="consumptionBarText" class="text-amber">60.0 kW</strong>
+                </div>
+                <div class="bar-track">
+                  <div id="consumptionBar" class="bar-fill fill-amber" style="width: 60%;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- DYNAMIC PRICING ENGINE PANEL -->
+          <div class="panel-card pricing-panel">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">Dynamic Pricing Engine</h3>
+                <p class="panel-subtitle">Real-time tariff calculation based on market factors</p>
+              </div>
+              <span class="formula-tag">ALGORITHMIC</span>
+            </div>
+
+            <div class="pricing-current-box">
+              <span class="price-header-label">CURRENT ENERGY PRICE</span>
+              <div class="price-amount-wrap">
+                <span class="price-big-val" id="pricingCurrent">₹8.25</span>
+                <span class="price-big-unit">/ kWh</span>
+              </div>
+              <span class="price-badge-alert" id="priceBadgeAlert">Peak Demand Surcharge Active</span>
+            </div>
+
+            <div class="factors-grid">
+              <div class="factor-card">
+                <span class="factor-title">Base Rate</span>
+                <strong class="factor-val" id="baseRate">₹5.00/kWh</strong>
+                <small class="factor-sub">Standard Tariff</small>
+              </div>
+              <div class="factor-card">
+                <span class="factor-title">Supply-Demand Factor</span>
+                <strong class="factor-val text-amber" id="demandFactor">1.20×</strong>
+                <small class="factor-sub">Demand > Supply</small>
+              </div>
+              <div class="factor-card">
+                <span class="factor-title">Peak Hour Factor</span>
+                <strong class="factor-val text-amber" id="peakFactor">1.25×</strong>
+                <small class="factor-sub">Evening Peak Hours</small>
+              </div>
+              <div class="factor-card">
+                <span class="factor-title">Weather Factor</span>
+                <strong class="factor-val" id="weatherFactor">1.10×</strong>
+                <small class="factor-sub">Cloud cover solar dip</small>
+              </div>
+            </div>
+
+            <!-- Formula Box -->
+            <div class="formula-box">
+              <div class="formula-title">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                <span>Pricing Formula</span>
+              </div>
+              <code>Dynamic Price = Base Rate × Supply-Demand Factor × Peak Factor × Weather Factor</code>
+            </div>
+
+            <div class="pricing-explanation-box">
+              <p id="pricingExplanation">
+                "Current demand exceeds available supply. Peak-hour demand and reduced renewable generation are increasing the energy price."
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4 Energy Summary Cards -->
+        <div class="summary-cards-grid">
+          <div class="summary-card">
+            <div class="summary-icon icon-teal">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+            </div>
+            <div>
+              <span class="summary-label">Energy Generated Today</span>
+              <strong class="summary-value" id="generatedToday">684.2 kWh</strong>
+            </div>
+          </div>
+          <div class="summary-card">
+            <div class="summary-icon icon-amber">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+            </div>
+            <div>
+              <span class="summary-label">Energy Consumed Today</span>
+              <strong class="summary-value" id="consumedToday">572.8 kWh</strong>
+            </div>
+          </div>
+          <div class="summary-card">
+            <div class="summary-icon icon-blue">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path><path d="M2 12h20"></path></svg>
+            </div>
+            <div>
+              <span class="summary-label">Renewable Energy Share</span>
+              <strong class="summary-value text-teal" id="renewableShareVal">80%</strong>
+            </div>
+          </div>
+          <div class="summary-card">
+            <div class="summary-icon icon-purple">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+            </div>
+            <div>
+              <span class="summary-label">Net Energy Balance</span>
+              <strong class="summary-value text-teal" id="netEnergyBalance">+111.4 kWh</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- GRID STABILITY & LOAD SHEDDING PANEL -->
+        <div class="panel-card stability-panel">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title">Grid Stability & Load Shedding Engine</h3>
+              <p class="panel-subtitle">Intelligent hierarchical load dispatching protecting mission-critical nodes</p>
+            </div>
+            <div id="stabilityStatusBadge" class="status-badge badge-danger">⚠ GRID DEFICIT DETECTED</div>
+          </div>
+
+          <!-- Stability Balance Bar -->
+          <div class="stability-stats-bar">
+            <div class="stability-stat">
+              <span>Generation:</span>
+              <strong id="stabGen" class="text-teal">50.0 kW</strong>
+            </div>
+            <div class="stability-divider">|</div>
+            <div class="stability-stat">
+              <span>Consumption:</span>
+              <strong id="stabCons" class="text-amber">60.0 kW</strong>
+            </div>
+            <div class="stability-divider">|</div>
+            <div class="stability-stat">
+              <span>Deficit:</span>
+              <strong id="stabDeficit" class="text-danger">10.0 kW</strong>
+            </div>
+          </div>
+
+          <!-- Stability Message Alert -->
+          <div id="stabilityMessage" class="stability-alert-box alert-danger">
+            <strong>⚠ GRID DEFICIT DETECTED:</strong> Current demand exceeds generation by 10.0 kW. Load shedding protocol initiated.
+          </div>
+
+          <!-- Priority Levels Hierarchy -->
+          <div class="priority-levels-grid">
+            <div class="priority-level-card level-p1">
+              <div class="priority-level-head">
+                <span class="p-badge p1-badge">Priority 1</span>
+                <span class="p-prot-tag">PROTECTED</span>
+              </div>
+              <strong class="p-name">Critical / Essential</strong>
+              <small class="p-desc">Hospitals, Emergency services, Central control. Never throttled.</small>
+            </div>
+
+            <div class="priority-level-card level-p2">
+              <div class="priority-level-head">
+                <span class="p-badge p2-badge">Priority 2</span>
+                <span class="p-state-tag">HIGH PRIORITY</span>
+              </div>
+              <strong class="p-name">Commercial & Utilities</strong>
+              <small class="p-desc">Battery stations, commercial producers, municipal infrastructure.</small>
+            </div>
+
+            <div class="priority-level-card level-p3">
+              <div class="priority-level-head">
+                <span class="p-badge p3-badge">Priority 3</span>
+                <span class="p-state-tag">RESIDENTIAL</span>
+              </div>
+              <strong class="p-name">Residential Complexes</strong>
+              <small class="p-desc">Neighborhood micro-grids, domestic consumers. Maintained normally.</small>
+            </div>
+
+            <div class="priority-level-card level-p4 throttled-level">
+              <div class="priority-level-head">
+                <span class="p-badge p4-badge">Priority 4</span>
+                <span class="p-throttle-tag">THROTTLED FIRST</span>
+              </div>
+              <strong class="p-name">Non-Essential / Heavy Load</strong>
+              <small class="p-desc">EV Fast Charging depots, optional heavy industrial loads.</small>
+            </div>
+          </div>
+
+          <!-- Example Nodes Live Status Underneath -->
+          <div class="priority-nodes-container">
+            <h4 class="sub-heading">Real-Time Dispatch State by Priority</h4>
+            <div id="priorityCards" class="priority-nodes-grid">
+              <!-- Dynamically rendered -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 2. NODE REGISTRY ================= -->
+      <section id="nodes" class="page-section">
+        <div class="section-header">
+          <div>
+            <span class="section-tag">NODE REGISTRY</span>
+            <h2>Micro-Grid Node Infrastructure</h2>
+            <p class="section-desc">Manage producers, consumers, storage units and EV charging hubs</p>
+          </div>
+          <button id="openNodeModal" class="btn btn-primary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            <span>+ Register Node</span>
+          </button>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="filter-card">
+          <div class="search-input-wrap">
+            <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input id="nodeSearch" type="text" placeholder="Search by Node ID, name or location..." />
+          </div>
+
+          <div class="select-group">
+            <select id="typeFilter">
+              <option value="">Type: All</option>
+              <option value="SOLAR_PRODUCER">Solar Producer</option>
+              <option value="CONSUMER">Consumer</option>
+              <option value="EV_STATION">EV Station</option>
+              <option value="BATTERY_STORAGE">Battery Storage</option>
+            </select>
+
+            <select id="statusFilter">
+              <option value="">Status: All</option>
+              <option value="ONLINE">ONLINE</option>
+              <option value="THROTTLED">THROTTLED</option>
+              <option value="OFFLINE">OFFLINE</option>
+            </select>
+
+            <select id="priorityFilter">
+              <option value="">Priority: All</option>
+              <option value="1">P1 - Critical (Protected)</option>
+              <option value="2">P2 - High</option>
+              <option value="3">P3 - Residential</option>
+              <option value="4">P4 - Non-Essential</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Node Registry Table -->
+        <div class="table-card">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Node</th>
+                  <th>Type</th>
+                  <th>Location</th>
+                  <th>Available Energy</th>
+                  <th>Capacity</th>
+                  <th>Output / Load</th>
+                  <th>Account Balance</th>
+                  <th>Priority</th>
+                  <th>Status</th>
+                  <th>Last Updated</th>
+                </tr>
+              </thead>
+              <tbody id="nodesTableBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 3. P2P ENERGY TRADING ================= -->
+      <section id="trade" class="page-section">
+        <div class="section-header">
+          <div>
+            <span class="section-tag">ENERGY MARKET</span>
+            <h2>P2P Energy Trading</h2>
+            <p class="section-desc">Trade available energy directly between registered micro-grid nodes.</p>
+          </div>
+        </div>
+
+        <div class="trade-grid">
+          <!-- Trade Execution Form -->
+          <div class="panel-card trade-form-card">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">Execute Energy Trade</h3>
+                <p class="panel-subtitle">Direct peer-to-peer decentralized energy transfer</p>
+              </div>
+              <span class="trade-live-badge">LIVE MARKET</span>
+            </div>
+
+            <form id="tradeForm" class="trade-form">
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="sellerSelect">
+                    <span>Seller Node (Producer / Storage)</span>
+                  </label>
+                  <select id="sellerSelect" required>
+                    <option value="">Select Seller Node</option>
+                  </select>
+                  <small id="sellerInfo" class="field-hint">Select a node with available energy</small>
+                </div>
+
+                <div class="form-group">
+                  <label for="buyerSelect">
+                    <span>Buyer Node (Consumer / EV / Hub)</span>
+                  </label>
+                  <select id="buyerSelect" required>
+                    <option value="">Select Buyer Node</option>
+                  </select>
+                  <small id="buyerInfo" class="field-hint">Select a buyer with sufficient balance</small>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="tradeAmount">
+                  <span>Energy Amount (kWh)</span>
+                </label>
+                <div class="amount-input-wrap">
+                  <input id="tradeAmount" type="number" min="0.1" step="0.5" value="20.0" required />
+                  <span class="input-suffix">kWh</span>
+                </div>
+                <!-- Quick Amount Presets -->
+                <div class="amount-presets">
+                  <button type="button" class="preset-btn" data-amt="5">5 kWh</button>
+                  <button type="button" class="preset-btn" data-amt="10">10 kWh</button>
+                  <button type="button" class="preset-btn" data-amt="20">20 kWh</button>
+                  <button type="button" class="preset-btn" data-amt="50">50 kWh</button>
+                </div>
+              </div>
+
+              <!-- Price & Cost Breakdown Card -->
+              <div class="trade-cost-breakdown">
+                <div class="breakdown-row">
+                  <span class="breakdown-label">Current Dynamic Tariff:</span>
+                  <strong class="breakdown-val text-teal" id="tradePrice">₹8.25 / kWh</strong>
+                </div>
+                <div class="breakdown-row total-row">
+                  <span class="breakdown-label">Estimated Transaction Cost:</span>
+                  <strong class="breakdown-val text-amber" id="estimatedCost">₹165.00</strong>
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-trade-execute full-width">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                <span>⚡ EXECUTE ENERGY TRADE</span>
+              </button>
+            </form>
+
+            <div class="java-architecture-note">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+              <p>In the final deployment, this trade dispatches to the Java Backend where JDBC executes atomic balance & energy transfers with PostgreSQL <code>COMMIT</code> / <code>ROLLBACK</code> transactions.</p>
+            </div>
+          </div>
+
+          <!-- Latest Transaction Result -->
+          <div class="panel-card trade-result-card">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">Transaction Receipt</h3>
+                <p class="panel-subtitle">Atomic transaction execution telemetry</p>
+              </div>
+            </div>
+
+            <div id="tradeResultContainer" class="trade-result-content">
+              <!-- Initial Result State -->
+              <div class="result-placeholder">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="20" height="16" rx="2"></rect><line x1="6" y1="8" x2="10" y2="8"></line><line x1="6" y1="12" x2="18" y2="12"></line><line x1="6" y1="16" x2="14" y2="16"></line></svg>
+                <p>No trade executed in this session.</p>
+                <small>Select nodes and execute a trade to inspect the JDBC transaction receipt.</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 4. AUDIT LOGS ================= -->
+      <section id="audit" class="page-section">
+        <div class="section-header">
+          <div>
+            <span class="section-tag">SYSTEM HISTORY</span>
+            <h2>Audit Logs & Transaction Trail</h2>
+            <p class="section-desc">Immutable event ledger recording grid events, P2P settlements, and load shedding actions</p>
+          </div>
+        </div>
+
+        <div class="table-card">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Timestamp</th>
+                  <th>Event</th>
+                  <th>Seller</th>
+                  <th>Buyer</th>
+                  <th>Energy</th>
+                  <th>Price</th>
+                  <th>Cost</th>
+                  <th>Status</th>
+                  <th>Details</th>
+                </tr>
+              </thead>
+              <tbody id="auditTableBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- REGISTER NEW NODE MODAL -->
+  <dialog id="nodeModal" class="custom-modal">
+    <div class="modal-backdrop-wrap">
+      <div class="modal-card">
+        <div class="modal-head">
+          <div class="modal-title-wrap">
+            <div class="modal-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            </div>
+            <div>
+              <h3>Register New Microgrid Node</h3>
+              <p>Add a producer, consumer, or battery asset to the grid</p>
+            </div>
+          </div>
+          <button id="closeNodeModal" type="button" class="modal-close-btn" aria-label="Close dialog">&times;</button>
+        </div>
+
+        <form id="nodeForm" class="modal-form">
+          <div class="form-group">
+            <label for="newNodeName">Node Name</label>
+            <input id="newNodeName" placeholder="e.g. South Bay Solar Farm" required />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="newNodeType">Node Type</label>
+              <select id="newNodeType" required>
+                <option value="SOLAR_PRODUCER">Solar Producer</option>
+                <option value="CONSUMER">Consumer</option>
+                <option value="EV_STATION">EV Station</option>
+                <option value="BATTERY_STORAGE">Battery Storage</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="newNodeLocation">Location / Sector</label>
+              <input id="newNodeLocation" placeholder="e.g. South Bay Hub" required />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="newNodeCapacity">Capacity (kWh)</label>
+              <input id="newNodeCapacity" type="number" min="0" value="100" required />
+            </div>
+            <div class="form-group">
+              <label for="newNodeOutput">Live Output / Load (kW)</label>
+              <input id="newNodeOutput" type="number" step="0.1" value="15.0" placeholder="+ for gen, - for load" required />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="newNodePriority">Grid Priority</label>
+              <select id="newNodePriority">
+                <option value="1">1 - Critical / Essential (Protected)</option>
+                <option value="2">2 - High Priority</option>
+                <option value="3" selected>3 - Residential / Normal</option>
+                <option value="4">4 - Non-Essential (Throttled First)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="newNodeBalance">Initial Balance (₹)</label>
+              <input id="newNodeBalance" type="number" min="0" value="1000" required />
+            </div>
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" id="cancelNodeModal" class="btn btn-secondary">Cancel</button>
+            <button type="submit" class="btn btn-primary">Register Node</button>
+          </div>
+        </form>
       </div>
-
-      <article class="panel">
-        <div class="panel-title"><h3>Grid Stability & Load Shedding</h3><span>Priority 1 nodes are protected</span></div>
-        <div id="stabilityMessage" class="stability-message"></div>
-        <div id="priorityCards" class="priority-grid"></div>
-      </article>
-    </section>
-
-    <section id="nodes" class="page-section">
-      <div class="section-heading">
-        <div><p class="eyebrow">NODE MANAGEMENT</p><h2>Node Registry</h2></div>
-        <button id="openNodeModal" class="primary-btn">+ Register Node</button>
-      </div>
-      <div class="filters">
-        <input id="nodeSearch" type="text" placeholder="Search ID, name or location" />
-        <select id="typeFilter"><option value="">All Types</option><option>SOLAR_PRODUCER</option><option>CONSUMER</option><option>EV_STATION</option><option>BATTERY_STORAGE</option></select>
-        <select id="statusFilter"><option value="">All Statuses</option><option>ONLINE</option><option>OFFLINE</option><option>THROTTLED</option></select>
-        <select id="priorityFilter"><option value="">All Priorities</option><option value="1">1 - Critical</option><option value="2">2 - High</option><option value="3">3 - Normal</option><option value="4">4 - Low</option></select>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Node</th><th>Type</th><th>Location</th><th>Energy (kWh)</th><th>Capacity (kWh)</th><th>Output / Load (kW)</th><th>Balance</th><th>Priority</th><th>Status</th></tr></thead>
-          <tbody id="nodesTableBody"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section id="trade" class="page-section">
-      <div class="section-heading"><div><p class="eyebrow">ENERGY MARKET</p><h2>P2P Energy Trading</h2></div></div>
-      <div class="two-column trade-layout">
-        <article class="panel">
-          <h3>Execute Trade</h3>
-          <form id="tradeForm" class="form-stack">
-            <label>Seller Node<select id="sellerSelect" required></select></label>
-            <label>Buyer Node<select id="buyerSelect" required></select></label>
-            <label>Energy Amount (kWh)<input id="tradeAmount" type="number" min="0.1" step="0.1" value="10" required /></label>
-            <div class="trade-summary"><span>Current Price</span><strong id="tradePrice">₹0.00/kWh</strong></div>
-            <div class="trade-summary"><span>Estimated Cost</span><strong id="estimatedCost">₹0.00</strong></div>
-            <button type="submit" class="primary-btn full">Execute Trade</button>
-          </form>
-          <p class="muted small">In the final project this button will call the Java backend. Java will validate the trade and JDBC will commit or rollback the PostgreSQL transaction.</p>
-        </article>
-        <article class="panel">
-          <h3>Latest Trade Result</h3>
-          <div id="tradeResult" class="empty-state">No trade executed in this session.</div>
-        </article>
-      </div>
-    </section>
-
-    <section id="audit" class="page-section">
-      <div class="section-heading"><div><p class="eyebrow">SYSTEM HISTORY</p><h2>Audit Logs</h2></div></div>
-      <div id="auditList" class="audit-list"></div>
-    </section>
-  </main>
-
-  <dialog id="nodeModal">
-    <form id="nodeForm" class="modal-card">
-      <div class="modal-head"><h3>Register New Node</h3><button id="closeNodeModal" type="button">×</button></div>
-      <label>Node Name<input id="newNodeName" required /></label>
-      <label>Type<select id="newNodeType"><option>SOLAR_PRODUCER</option><option>CONSUMER</option><option>EV_STATION</option><option>BATTERY_STORAGE</option></select></label>
-      <label>Location<input id="newNodeLocation" required /></label>
-      <label>Maximum Capacity (kWh)<input id="newNodeCapacity" type="number" min="0" value="50" required /></label>
-      <label>Priority<select id="newNodePriority"><option value="1">1 - Critical</option><option value="2">2 - High</option><option value="3" selected>3 - Normal</option><option value="4">4 - Low</option></select></label>
-      <button class="primary-btn full" type="submit">Register Node</button>
-    </form>
+    </div>
   </dialog>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="toastContainer" class="toast-container"></div>
 
   <script src="app.js"></script>
 </body>
