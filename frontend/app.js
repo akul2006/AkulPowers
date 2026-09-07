@@ -156,6 +156,65 @@ const state = {
   ]
 };
 
+
+async function loadNodesFromBackend() {
+
+  try {
+
+    const response =
+      await fetch("http://localhost:8080/api/nodes");
+
+    if (!response.ok) {
+      throw new Error(
+        "Backend returned status " + response.status
+      );
+    }
+
+    const backendNodes =
+      await response.json();
+
+
+    state.nodes = backendNodes.map(node => ({
+      id: node.nodeId,
+      name: node.name,
+      type: node.type,
+      location: node.location,
+
+      energy: node.availableEnergyKwh,
+      capacity: node.maxCapacityKwh,
+      output: node.currentOutputKw,
+
+      balance: node.balance,
+      priority: node.priority,
+      status: node.status,
+
+      lastUpdated: "Live"
+    }));
+
+
+    console.log(
+      "Loaded nodes from PostgreSQL:",
+      state.nodes
+    );
+
+
+    renderDashboard();
+    renderNodesTable();
+
+  } catch (error) {
+
+    console.error(
+      "Could not load nodes from backend:",
+      error
+    );
+
+    showToast(
+      "Could not connect to FluxGrid Java backend.",
+      "danger"
+    );
+  }
+}
+
 const $ = (id) => document.getElementById(id);
 
 function formatCurrency(amount) {
@@ -243,14 +302,14 @@ function renderDashboard() {
   // 1. Primary Metrics Cards
   $('generationValue').textContent = formatNumber(metrics.generation);
   $('consumptionValue').textContent = formatNumber(metrics.consumption);
-  
+
   const reserveEl = $('reserveValue');
   reserveEl.textContent = (metrics.reserve > 0 ? '+' : '') + formatNumber(metrics.reserve);
-  
+
   const reserveCard = $('reserveCard');
   const reserveIcon = $('reserveIconContainer');
   const reserveFooter = $('reserveFooter');
-  
+
   if (metrics.reserve < 0) {
     reserveCard.className = 'metric-card card-deficit';
     reserveIcon.className = 'metric-icon icon-deficit';
@@ -293,12 +352,12 @@ function renderDashboard() {
   if (metrics.reserve < 0) {
     priceAlert.textContent = 'Peak Demand Surcharge Active';
     priceAlert.className = 'price-badge-alert text-amber';
-    $('pricingExplanation').textContent = 
+    $('pricingExplanation').textContent =
       '"Current demand exceeds available supply. Peak-hour demand and reduced renewable generation are increasing the energy price."';
   } else {
     priceAlert.textContent = 'Standard Grid Pricing';
     priceAlert.className = 'price-badge-alert text-teal';
-    $('pricingExplanation').textContent = 
+    $('pricingExplanation').textContent =
       '"Microgrid generation is currently balanced. Base tariff factors are operating within normal equilibrium thresholds."';
   }
 
@@ -312,7 +371,7 @@ function renderDashboard() {
   $('stabGen').textContent = `${formatNumber(metrics.generation)} kW`;
   $('stabCons').textContent = `${formatNumber(metrics.consumption)} kW`;
   const stabDeficit = $('stabDeficit');
-  
+
   if (metrics.reserve < 0) {
     const deficitVal = Math.abs(metrics.reserve);
     stabDeficit.textContent = `${formatNumber(deficitVal)} kW Shortfall`;
@@ -447,7 +506,7 @@ function renderNodesTable() {
   const priorityFilter = $('priorityFilter')?.value || '';
 
   const filtered = state.nodes.filter(node => {
-    const matchesSearch = !searchQuery || 
+    const matchesSearch = !searchQuery ||
       node.id.toLowerCase().includes(searchQuery) ||
       node.name.toLowerCase().includes(searchQuery) ||
       node.location.toLowerCase().includes(searchQuery);
@@ -527,7 +586,7 @@ function populateTradeDropdowns() {
 
   // Sellers: Nodes with energy > 0 or solar/battery
   const sellers = onlineNodes.filter(n => n.type === 'SOLAR_PRODUCER' || n.type === 'BATTERY_STORAGE' || n.energy > 0);
-  
+
   // Buyers: Any active node
   const buyers = onlineNodes;
 
@@ -556,15 +615,15 @@ function updateNodeTradeInfo() {
 
   if (sellerInfo) {
     const sNode = state.nodes.find(n => n.id === sellerId);
-    sellerInfo.textContent = sNode 
-      ? `Available Energy: ${formatNumber(sNode.energy)} kWh | Location: ${sNode.location}` 
+    sellerInfo.textContent = sNode
+      ? `Available Energy: ${formatNumber(sNode.energy)} kWh | Location: ${sNode.location}`
       : 'Select a node with available energy';
   }
 
   if (buyerInfo) {
     const bNode = state.nodes.find(n => n.id === buyerId);
-    buyerInfo.textContent = bNode 
-      ? `Current Account Balance: ${formatCurrency(bNode.balance)} | Priority: P${bNode.priority}` 
+    buyerInfo.textContent = bNode
+      ? `Current Account Balance: ${formatCurrency(bNode.balance)} | Priority: P${bNode.priority}`
       : 'Select a buyer with sufficient balance';
   }
 }
@@ -985,8 +1044,10 @@ function initApp() {
   renderDashboard();
   renderNodesTable();
   renderAuditLogs();
+
+  // Replace demo nodes with the records from the Java backend.
+  loadNodesFromBackend();
 }
 
 // Run when DOM is ready
 document.addEventListener('DOMContentLoaded', initApp);
-
