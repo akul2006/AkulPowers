@@ -1,105 +1,10 @@
 const state = {
-  nodes: [
-    {
-      id: 'NODE-SOLAR-01',
-      name: 'North Ridge Solar Farm',
-      type: 'SOLAR_PRODUCER',
-      location: 'North Ridge Sector',
-      energy: 140.0,
-      capacity: 250.0,
-      output: 22.5,
-      balance: 4850.00,
-      priority: 2,
-      status: 'ONLINE',
-      lastUpdated: 'Just now'
-    },
-    {
-      id: 'NODE-SOLAR-02',
-      name: 'Sunward Commons Rooftop',
-      type: 'SOLAR_PRODUCER',
-      location: 'East Sector',
-      energy: 85.0,
-      capacity: 150.0,
-      output: 17.5,
-      balance: 2150.50,
-      priority: 2,
-      status: 'ONLINE',
-      lastUpdated: '1 min ago'
-    },
-    {
-      id: 'NODE-BAT-01',
-      name: 'Central Community Storage',
-      type: 'BATTERY_STORAGE',
-      location: 'Central Substation',
-      energy: 95.0,
-      capacity: 200.0,
-      output: 10.0,
-      balance: 3200.00,
-      priority: 2,
-      status: 'ONLINE',
-      lastUpdated: 'Just now'
-    },
-    {
-      id: 'NODE-CONS-01',
-      name: 'Harbor Hospital',
-      type: 'CONSUMER',
-      location: 'Harbor Medical Zone',
-      energy: 0.0,
-      capacity: 0.0,
-      output: -25.0,
-      balance: 14500.00,
-      priority: 1,
-      status: 'ONLINE',
-      lastUpdated: 'Just now'
-    },
-    {
-      id: 'NODE-CONS-02',
-      name: 'Cedar Heights Residences',
-      type: 'CONSUMER',
-      location: 'Cedar Heights',
-      energy: 0.0,
-      capacity: 0.0,
-      output: -23.0,
-      balance: 2840.75,
-      priority: 3,
-      status: 'ONLINE',
-      lastUpdated: '2 mins ago'
-    },
-    {
-      id: 'NODE-EV-01',
-      name: 'West Loop EV Charging Hub',
-      type: 'EV_STATION',
-      location: 'West Loop Terminal',
-      energy: 15.0,
-      capacity: 80.0,
-      output: -12.0,
-      balance: 350.00,
-      priority: 4,
-      status: 'THROTTLED',
-      lastUpdated: 'Just now'
-    },
-    {
-      id: 'NODE-EV-02',
-      name: 'South Depot Superchargers',
-      type: 'EV_STATION',
-      location: 'South Transit Depot',
-      energy: 0.0,
-      capacity: 100.0,
-      output: 0.0,
-      balance: 120.00,
-      priority: 4,
-      status: 'OFFLINE',
-      lastUpdated: '10 mins ago'
-    }
-  ],
+  nodes: [],
+  grid: null,
+  pricing: null,
+  connected: false,
 
-  pricing: {
-    baseRate: 5.00,
-    demandFactor: 1.20,
-    peakFactor: 1.25,
-    weatherFactor: 1.10
-  },
-
+  // Decorative daily summaries and historical chart points are labelled sample data.
   dailySummary: {
     generatedToday: 684.2,
     consumedToday: 572.8,
@@ -116,108 +21,87 @@ const state = {
     { time: '20:00', gen: 50, cons: 60 }
   ],
 
-  audits: [
-    {
-      id: 'TX-1003',
-      timestamp: '10:12 PM',
-      event: 'P2P ENERGY TRADE',
-      seller: 'Sunward Commons',
-      buyer: 'West Loop EV Hub',
-      energy: '50.0 kWh',
-      price: '₹8.25/kWh',
-      cost: '₹412.50',
-      status: 'ROLLED_BACK',
-      details: 'Buyer has insufficient account balance (₹350.00 vs ₹412.50 required).'
-    },
-    {
-      id: 'TX-1002',
-      timestamp: '10:05 PM',
-      event: 'P2P ENERGY TRADE',
-      seller: 'North Ridge Solar',
-      buyer: 'Harbor Hospital',
-      energy: '20.0 kWh',
-      price: '₹6.00/kWh',
-      cost: '₹120.00',
-      status: 'COMMITTED',
-      details: 'Atomic energy allocation and fund transfer verified via JDBC transaction.'
-    },
-    {
-      id: 'EVT-1001',
-      timestamp: '09:58 PM',
-      event: 'LOAD SHEDDING',
-      seller: 'FluxGrid Engine',
-      buyer: 'West Loop EV Hub',
-      energy: '12.0 kW load',
-      price: 'N/A',
-      cost: '₹0.00',
-      status: 'SUCCESS',
-      details: 'Priority 4 load throttled automatically. Priority 1 Harbor Hospital fully protected.'
-    }
-  ]
+  audits: []
 };
 
+const API_BASE = 'http://localhost:8080/api';
+let refreshPromise = null;
+
+async function apiRequest(path, form) {
+  let response;
+  try {
+    response = await fetch(API_BASE + path, {
+      method: form === undefined ? 'GET' : 'POST',
+      ...(form === undefined ? {} : { body: new URLSearchParams(form) }),
+      signal: AbortSignal.timeout(15000)
+    });
+  } catch (cause) {
+    throw new Error(form === undefined
+      ? 'Cannot reach the Java backend. Displayed data may be stale.'
+      : 'No response received. The operation may have completed; refresh and inspect audit logs before retrying.');
+  }
+  const data = await response.json();
+  if (!response.ok || data.success === false) {
+    const error = new Error(data.message || data.error || 'Backend request failed.');
+    error.httpStatus = response.status;
+    throw error;
+  }
+  return data;
+}
 
 async function loadNodesFromBackend() {
+  const nodes = await apiRequest('/nodes');
+  return nodes.map(n => ({ id: n.nodeId, name: n.name, type: n.type, location: n.location,
+    energy: n.availableEnergyKwh, capacity: n.maxCapacityKwh, output: n.currentOutputKw,
+    balance: n.balance, priority: n.priority, status: n.status, lastUpdated: 'Last refresh' }));
+}
+async function loadGridStatusFromBackend() { return apiRequest('/grid-status'); }
+async function loadPricingFromBackend() { return apiRequest('/pricing'); }
+async function loadAuditLogsFromBackend() {
+  const logs = await apiRequest('/audit-logs');
+  return logs.map(log => ({ ...log, seller: log.seller || '—',
+    buyer: log.buyer || log.relatedNodeId || '—',
+    energy: log.energyKwh == null ? '—' : formatNumber(log.energyKwh, 2) + ' kWh',
+    price: log.pricePerKwh == null ? '—' : formatCurrency(log.pricePerKwh) + '/kWh',
+    cost: log.totalCost == null ? '—' : formatCurrency(log.totalCost) }));
+}
 
-  try {
-
-    const response =
-      await fetch("http://localhost:8080/api/nodes");
-
-    if (!response.ok) {
-      throw new Error(
-        "Backend returned status " + response.status
-      );
-    }
-
-    const backendNodes =
-      await response.json();
-
-
-    state.nodes = backendNodes.map(node => ({
-      id: node.nodeId,
-      name: node.name,
-      type: node.type,
-      location: node.location,
-
-      energy: node.availableEnergyKwh,
-      capacity: node.maxCapacityKwh,
-      output: node.currentOutputKw,
-
-      balance: node.balance,
-      priority: node.priority,
-      status: node.status,
-
-      lastUpdated: "Live"
-    }));
-
-
-    console.log(
-      "Loaded nodes from PostgreSQL:",
-      state.nodes
-    );
-
-
-    renderDashboard();
-    renderNodesTable();
-
-  } catch (error) {
-
-    console.error(
-      "Could not load nodes from backend:",
-      error
-    );
-
-    showToast(
-      "Could not connect to FluxGrid Java backend.",
-      "danger"
-    );
+async function refreshAllData(afterMutation = false) {
+  if (refreshPromise) {
+    if (!afterMutation) return refreshPromise;
+    await refreshPromise;
   }
+  refreshPromise = (async () => {
+    $('refreshBtn').disabled = true;
+    try {
+      // Apply one complete refresh so a failed request cannot mix live and demo state.
+      const [nodes, grid, pricing, audits] = await Promise.all([
+        loadNodesFromBackend(), loadGridStatusFromBackend(), loadPricingFromBackend(), loadAuditLogsFromBackend()
+      ]);
+      Object.assign(state, { nodes, grid, pricing, audits, connected: true });
+      document.querySelector('.conn-state').textContent = 'Connected';
+      document.querySelector('.conn-sub').textContent = 'Java API / PostgreSQL';
+      updateTimestamp();
+      renderDashboard(); renderNodesTable(); renderAuditLogs();
+      return true;
+    } catch (error) {
+      state.connected = false;
+      document.querySelector('.conn-state').textContent = 'Unavailable';
+      document.querySelector('.conn-sub').textContent = 'Last values may be stale';
+      $('headerGridStatusText').textContent = 'DATA UNAVAILABLE';
+      $('lastUpdatedTime').textContent = 'Refresh failed';
+      $('loadSheddingBtn').disabled = true;
+      showToast(error.message, 'danger');
+      return false;
+    } finally { $('refreshBtn').disabled = false; }
+  })();
+  try { return await refreshPromise; } finally { refreshPromise = null; }
 }
 
 const $ = (id) => document.getElementById(id);
 
 function formatCurrency(amount) {
+  if (amount == null || !Number.isFinite(Number(amount))) return '—';
   return new Intl.NumberFormat('en-IN', {
     style: 'currency',
     currency: 'INR',
@@ -227,7 +111,11 @@ function formatCurrency(amount) {
 }
 
 function formatNumber(val, decimals = 1) {
-  return Number(val).toFixed(decimals);
+  return val == null || !Number.isFinite(Number(val)) ? '—' : Number(val).toFixed(decimals);
+}
+
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
 function getReadableType(type) {
@@ -251,43 +139,15 @@ function getTypeBadgeClass(type) {
 }
 
 function calculateGridMetrics() {
-  const totalGen = state.nodes
-    .filter(n => n.status !== 'OFFLINE' && n.output > 0)
-    .reduce((sum, n) => sum + n.output, 0);
-
-  const totalCons = Math.abs(
-    state.nodes
-      .filter(n => n.status !== 'OFFLINE' && n.output < 0)
-      .reduce((sum, n) => sum + n.output, 0)
-  );
-
-  const netReserve = totalGen - totalCons;
-  const activeCount = state.nodes.filter(n => n.status !== 'OFFLINE').length;
-  const totalCount = state.nodes.length;
-
-  // Dynamic Price Formula = Base Rate * Supply-Demand * Peak * Weather
-  const p = state.pricing;
-  const dynamicPrice = p.baseRate * p.demandFactor * p.peakFactor * p.weatherFactor;
-
-  // Grid Status assessment
-  let gridStatus = 'GRID STABLE';
-  let badgeClass = 'badge-stable';
-  if (netReserve < 0) {
-    gridStatus = 'LOAD SHEDDING';
-    badgeClass = 'badge-danger';
-  } else if (netReserve < 8.0) {
-    gridStatus = 'WARNING';
-    badgeClass = 'badge-warning';
-  }
-
+  // Java owns power totals, status thresholds and tariff factors.
+  const grid = state.grid;
+  const status = grid?.status || 'LOADING';
   return {
-    generation: totalGen,
-    consumption: totalCons,
-    reserve: netReserve,
-    activeNodes: `${activeCount} / ${totalCount}`,
-    dynamicPrice: dynamicPrice,
-    status: gridStatus,
-    badgeClass: badgeClass
+    generation: grid?.generation ?? NaN, consumption: grid?.consumption ?? NaN,
+    reserve: grid?.netReserve ?? NaN,
+    activeNodes: state.nodes.filter(n => n.status === 'ONLINE').length + ' / ' + state.nodes.length,
+    dynamicPrice: state.pricing?.pricePerKwh ?? NaN,
+    status, badgeClass: status === 'STABLE' ? 'badge-stable' : status === 'DEFICIT' ? 'badge-danger' : 'badge-warning'
   };
 }
 
@@ -308,16 +168,13 @@ function renderDashboard() {
 
   const reserveCard = $('reserveCard');
   const reserveIcon = $('reserveIconContainer');
-  const reserveFooter = $('reserveFooter');
 
-  if (metrics.reserve < 0) {
+  if (metrics.status === 'DEFICIT') {
     reserveCard.className = 'metric-card card-deficit';
     reserveIcon.className = 'metric-icon icon-deficit';
-    reserveFooter.innerHTML = '<span class="text-danger">⚠ Deficit: Load Shedding Active</span>';
   } else {
     reserveCard.className = 'metric-card card-teal';
     reserveIcon.className = 'metric-icon icon-teal';
-    reserveFooter.innerHTML = '<span class="text-teal">✓ Surplus reserve available</span>';
   }
 
   $('activeNodesValue').textContent = metrics.activeNodes;
@@ -332,34 +189,24 @@ function renderDashboard() {
   const headerStatusPill = $('headerGridStatusPill');
   const headerStatusText = $('headerGridStatusText');
   headerStatusText.textContent = metrics.status;
-  headerStatusPill.className = 'header-status-pill ' + (metrics.reserve < 0 ? 'danger' : metrics.reserve < 8 ? '' : 'stable');
+  headerStatusPill.className = 'header-status-pill ' + (metrics.status === 'DEFICIT' ? 'danger' : metrics.status !== 'STABLE' ? '' : 'stable');
 
   // 2. Snapshot Bars
-  const maxKw = Math.max(metrics.generation, metrics.consumption, 70);
-  $('generationBar').style.width = `${(metrics.generation / maxKw) * 100}%`;
-  $('consumptionBar').style.width = `${(metrics.consumption / maxKw) * 100}%`;
+  const maxKw = state.grid ? Math.max(metrics.generation, metrics.consumption, 70) : 70;
+  $('generationBar').style.width = `${state.grid ? (metrics.generation / maxKw) * 100 : 0}%`;
+  $('consumptionBar').style.width = `${state.grid ? (metrics.consumption / maxKw) * 100 : 0}%`;
   $('generationBarText').textContent = `${formatNumber(metrics.generation)} kW`;
   $('consumptionBarText').textContent = `${formatNumber(metrics.consumption)} kW`;
 
   // 3. Dynamic Pricing Panel
   $('pricingCurrent').textContent = '₹' + formatNumber(metrics.dynamicPrice, 2);
-  $('baseRate').textContent = formatCurrency(state.pricing.baseRate) + '/kWh';
-  $('demandFactor').textContent = formatNumber(state.pricing.demandFactor, 2) + '×';
-  $('peakFactor').textContent = formatNumber(state.pricing.peakFactor, 2) + '×';
-  $('weatherFactor').textContent = formatNumber(state.pricing.weatherFactor, 2) + '×';
+  $('baseRate').textContent = formatCurrency(state.pricing?.basePrice) + '/kWh';
+  $('demandFactor').textContent = formatNumber(state.pricing?.supplyDemandFactor, 2) + '×';
+  $('peakFactor').textContent = formatNumber(state.pricing?.peakFactor, 2) + '×';
+  $('weatherFactor').textContent = formatNumber(state.pricing?.weatherFactor, 2) + '×';
 
-  const priceAlert = $('priceBadgeAlert');
-  if (metrics.reserve < 0) {
-    priceAlert.textContent = 'Peak Demand Surcharge Active';
-    priceAlert.className = 'price-badge-alert text-amber';
-    $('pricingExplanation').textContent =
-      '"Current demand exceeds available supply. Peak-hour demand and reduced renewable generation are increasing the energy price."';
-  } else {
-    priceAlert.textContent = 'Standard Grid Pricing';
-    priceAlert.className = 'price-badge-alert text-teal';
-    $('pricingExplanation').textContent =
-      '"Microgrid generation is currently balanced. Base tariff factors are operating within normal equilibrium thresholds."';
-  }
+  $('priceBadgeAlert').textContent = state.pricing ? 'Current backend tariff' : 'Waiting for pricing';
+  $('pricingExplanation').textContent = 'Tariff uses live supply and demand, a local evening peak factor (18:00-22:00), and neutral simulated weather (1.00). The final trade receipt uses the execution-time price.';
 
   // 4. Energy Summary Cards
   $('generatedToday').textContent = `${formatNumber(state.dailySummary.generatedToday)} kWh`;
@@ -372,28 +219,24 @@ function renderDashboard() {
   $('stabCons').textContent = `${formatNumber(metrics.consumption)} kW`;
   const stabDeficit = $('stabDeficit');
 
-  if (metrics.reserve < 0) {
-    const deficitVal = Math.abs(metrics.reserve);
-    stabDeficit.textContent = `${formatNumber(deficitVal)} kW Shortfall`;
-    stabDeficit.className = 'text-danger';
-    $('stabilityStatusBadge').textContent = '⚠ GRID DEFICIT DETECTED';
-    $('stabilityStatusBadge').className = 'status-badge badge-danger';
-    $('stabilityMessage').className = 'stability-alert-box alert-danger';
-    $('stabilityMessage').innerHTML = `<strong>⚠ GRID DEFICIT DETECTED:</strong> Current demand exceeds generation by ${formatNumber(deficitVal)} kW. Priority 4 non-essential loads are throttled.`;
-  } else {
-    stabDeficit.textContent = `${formatNumber(metrics.reserve)} kW Surplus`;
-    stabDeficit.className = 'text-teal';
-    $('stabilityStatusBadge').textContent = '✓ GRID BALANCED & STABLE';
-    $('stabilityStatusBadge').className = 'status-badge badge-stable';
-    $('stabilityMessage').className = 'stability-alert-box alert-stable';
-    $('stabilityMessage').innerHTML = `<strong>✓ GRID OPERATING OPTIMALLY:</strong> Stable supply buffer of ${formatNumber(metrics.reserve)} kW maintained across all priority sectors.`;
-  }
+  stabDeficit.textContent = formatNumber(metrics.reserve) + ' kW reserve';
+  stabDeficit.className = metrics.status === 'DEFICIT' ? 'text-danger' : 'text-teal';
+  $('stabilityStatusBadge').textContent = metrics.status;
+  $('stabilityStatusBadge').className = 'status-badge ' + metrics.badgeClass;
+  $('stabilityMessage').className = 'stability-alert-box ' + (metrics.status === 'DEFICIT' ? 'alert-danger' : 'alert-stable');
+  $('stabilityMessage').textContent = metrics.status === 'DEFICIT'
+    ? 'Demand exceeds generation. Run load shedding to shed Priority 4, then 3, then 2 consumers; Priority 1 remains protected.'
+    : metrics.status === 'WARNING' ? 'Supply covers demand, but the reserve is low.'
+    : metrics.status === 'STABLE' ? 'The grid has a stable supply reserve.' : 'Waiting for the Java backend.';
+  $('reserveFooter').textContent = state.grid ? metrics.status + ': ' + formatNumber(metrics.reserve) + ' kW reserve' : 'Waiting for grid data';
+  $('gridStatusFooter').textContent = state.nodes.filter(n => n.status === 'THROTTLED').length + ' nodes throttled';
+  $('loadSheddingBtn').disabled = !state.connected;
 
   // Render Priority Node cards
   renderPriorityCards();
 
   // Draw Energy SVG Chart
-  renderEnergySvgChart(metrics.generation, metrics.consumption);
+  if (state.grid) renderEnergySvgChart(metrics.generation, metrics.consumption);
 
   // Update Trade section tariff display
   $('tradePrice').textContent = `₹${formatNumber(metrics.dynamicPrice, 2)} / kWh`;
@@ -413,13 +256,13 @@ function renderPriorityCards() {
     if (node.status === 'OFFLINE') statusBadgeClass = 'badge-offline';
 
     const pClass = node.priority === 1 ? 'p1-badge' : node.priority === 2 ? 'p2-badge' : node.priority === 3 ? 'p3-badge' : 'p4-badge';
-    const pTag = node.priority === 1 ? 'Protected Essential Service' : node.priority === 4 ? 'Throttled during deficit' : 'Normal Grid Operation';
+    const pTag = node.priority === 1 ? 'Protected from load shedding' : node.status === 'THROTTLED' ? 'Excluded from active demand' : 'Eligible for shedding during deficit';
 
     return `
       <div class="node-status-card">
         <div class="node-status-head">
-          <strong>${node.name}</strong>
-          <span class="node-badge ${statusBadgeClass}">${node.status}</span>
+          <strong>${escapeHtml(node.name)}</strong>
+          <span class="node-badge ${statusBadgeClass}">${escapeHtml(node.status)}</span>
         </div>
         <div class="node-status-meta">
           <span class="p-badge ${pClass}">Priority ${node.priority}</span>
@@ -439,16 +282,17 @@ function renderEnergySvgChart(currentGen, currentCons) {
   const paddingLeft = 55;
   const paddingRight = 30;
   const paddingTop = 30;
-  const paddingBottom = 55;
+  const paddingBottom = 60;
 
   const plotWidth = width - paddingLeft - paddingRight;
   const plotHeight = height - paddingTop - paddingBottom;
-  const maxY = 85; // Max kW on scale
+  const maxY = Math.max(80, Math.ceil(Math.max(currentGen, currentCons) / 20) * 20);
+  document.querySelectorAll('#energySvgChart .chart-axis-text').forEach((label, index) => {
+    if (index < 4) label.textContent = formatNumber(maxY * (1 - index / 3), 0) + ' kW';
+  });
 
   // Assemble dynamic points using chartData history + current live metric
-  const points = [...state.chartData];
-  // Replace the last point with live metrics
-  points[points.length - 1] = { time: 'Now', gen: currentGen, cons: currentCons };
+  const points = [...state.chartData, { time: 'Now', gen: currentGen, cons: currentCons }];
 
   function getX(index) {
     return paddingLeft + (index / (points.length - 1)) * plotWidth;
@@ -499,6 +343,8 @@ function renderEnergySvgChart(currentGen, currentCons) {
 function renderNodesTable() {
   const tbody = $('nodesTableBody');
   if (!tbody) return;
+  // Keep trade choices current even when registry filters match no rows.
+  populateTradeDropdowns();
 
   const searchQuery = ($('nodeSearch')?.value || '').trim().toLowerCase();
   const typeFilter = $('typeFilter')?.value || '';
@@ -542,14 +388,14 @@ function renderNodesTable() {
       <tr>
         <td>
           <div class="node-cell-name">
-            <strong>${node.name}</strong>
-            <small>${node.id}</small>
+            <strong>${escapeHtml(node.name)}</strong>
+            <small>${escapeHtml(node.id)}</small>
           </div>
         </td>
         <td>
-          <span class="type-pill ${typeClass}">${readableType}</span>
+          <span class="type-pill ${typeClass}">${escapeHtml(readableType)}</span>
         </td>
-        <td>${node.location}</td>
+        <td>${escapeHtml(node.location)}</td>
         <td><strong>${formatNumber(node.energy)}</strong> <span style="color:var(--text-dim)">kWh</span></td>
         <td>${formatNumber(node.capacity)} <span style="color:var(--text-dim)">kWh</span></td>
         <td>
@@ -562,15 +408,13 @@ function renderNodesTable() {
           <span class="p-badge ${pClass}">P${node.priority}${node.priority === 1 ? ' · Prot' : ''}</span>
         </td>
         <td>
-          <span class="node-badge ${statusClass}">${node.status}</span>
+          <span class="node-badge ${statusClass}">${escapeHtml(node.status)}</span>
         </td>
-        <td style="color: var(--text-dim); font-size: 0.78rem;">${node.lastUpdated}</td>
+        <td style="color: var(--text-dim); font-size: 0.78rem;">${escapeHtml(node.lastUpdated)}</td>
       </tr>
     `;
   }).join('');
 
-  // Also synchronize trade dropdown options with latest node list
-  populateTradeDropdowns();
 }
 
 /** Populate Seller and Buyer Dropdown Selects */
@@ -582,7 +426,7 @@ function populateTradeDropdowns() {
   const currentSeller = sellerSelect.value;
   const currentBuyer = buyerSelect.value;
 
-  const onlineNodes = state.nodes.filter(n => n.status !== 'OFFLINE');
+  const onlineNodes = state.nodes.filter(n => n.status === 'ONLINE');
 
   // Sellers: Nodes with energy > 0 or solar/battery
   const sellers = onlineNodes.filter(n => n.type === 'SOLAR_PRODUCER' || n.type === 'BATTERY_STORAGE' || n.energy > 0);
@@ -591,10 +435,10 @@ function populateTradeDropdowns() {
   const buyers = onlineNodes;
 
   sellerSelect.innerHTML = '<option value="">Select Seller (Energy Available)</option>' +
-    sellers.map(s => `<option value="${s.id}">${s.name} (${s.id}) — Avail: ${formatNumber(s.energy)} kWh</option>`).join('');
+    sellers.map(s => `<option value="${escapeHtml(s.id)}">${escapeHtml(s.name)} (${escapeHtml(s.id)}) — Avail: ${formatNumber(s.energy)} kWh</option>`).join('');
 
   buyerSelect.innerHTML = '<option value="">Select Buyer (Account Balance)</option>' +
-    buyers.map(b => `<option value="${b.id}">${b.name} (${b.id}) — Bal: ${formatCurrency(b.balance)}</option>`).join('');
+    buyers.map(b => `<option value="${escapeHtml(b.id)}">${escapeHtml(b.name)} (${escapeHtml(b.id)}) — Bal: ${formatCurrency(b.balance)}</option>`).join('');
 
   if (currentSeller && sellers.some(s => s.id === currentSeller)) {
     sellerSelect.value = currentSeller;
@@ -635,21 +479,21 @@ function renderAuditLogs() {
 
   tbody.innerHTML = state.audits.map(log => {
     let statusClass = 'audit-committed';
-    if (log.status === 'ROLLED_BACK') statusClass = 'audit-rollback';
+    if (log.status === 'ROLLED_BACK' || log.status === 'FAILED') statusClass = 'audit-rollback';
     if (log.status === 'SUCCESS') statusClass = 'audit-success';
 
     return `
       <tr>
-        <td><strong style="font-family: var(--font-mono); color: var(--teal);">${log.id}</strong></td>
-        <td style="color: var(--text-dim); font-size: 0.78rem; white-space: nowrap;">${log.timestamp}</td>
-        <td><strong>${log.event}</strong></td>
-        <td>${log.seller}</td>
-        <td>${log.buyer}</td>
-        <td>${log.energy}</td>
-        <td>${log.price}</td>
-        <td><strong style="font-family: var(--font-mono);">${log.cost}</strong></td>
-        <td><span class="audit-status-badge ${statusClass}">${log.status}</span></td>
-        <td style="color: var(--text-muted); font-size: 0.8rem;">${log.details}</td>
+        <td><strong style="font-family: var(--font-mono); color: var(--teal);">${escapeHtml(log.id)}</strong></td>
+        <td style="color: var(--text-dim); font-size: 0.78rem; white-space: nowrap;">${escapeHtml(log.timestamp)}</td>
+        <td><strong>${escapeHtml(log.event)}</strong></td>
+        <td>${escapeHtml(log.seller)}</td>
+        <td>${escapeHtml(log.buyer)}</td>
+        <td>${escapeHtml(log.energy)}</td>
+        <td>${escapeHtml(log.price)}</td>
+        <td><strong style="font-family: var(--font-mono);">${escapeHtml(log.cost)}</strong></td>
+        <td><span class="audit-status-badge ${statusClass}">${escapeHtml(log.status)}</span></td>
+        <td style="color: var(--text-muted); font-size: 0.8rem;">${escapeHtml(log.details)}</td>
       </tr>
     `;
   }).join('');
@@ -669,89 +513,24 @@ function updateEstimatedCost() {
 // ==========================================
 
 /** Handle P2P Trade Execution */
-function handleTradeExecution(e) {
+async function handleTradeExecution(e) {
   e.preventDefault();
-
-  const sellerId = $('sellerSelect').value;
-  const buyerId = $('buyerSelect').value;
-  const amount = Number($('tradeAmount').value) || 0;
-  const metrics = calculateGridMetrics();
-  const cost = amount * metrics.dynamicPrice;
-
-  const seller = state.nodes.find(n => n.id === sellerId);
-  const buyer = state.nodes.find(n => n.id === buyerId);
-
-  let status = 'COMMITTED';
-  let rollbackReason = '';
-  const txId = `TX-${1000 + state.audits.length + 1}`;
-  const nowTime = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-
-  // Atomic Validation (Mocking the future Java/JDBC layer validation)
-  if (!seller || !buyer) {
-    status = 'ROLLED_BACK';
-    rollbackReason = 'Invalid node selection. Both seller and buyer must be active nodes.';
-  } else if (seller.id === buyer.id) {
-    status = 'ROLLED_BACK';
-    rollbackReason = 'Seller and Buyer cannot be the same node.';
-  } else if (amount <= 0) {
-    status = 'ROLLED_BACK';
-    rollbackReason = 'Trade volume must be greater than 0 kWh.';
-  } else if (seller.energy < amount) {
-    status = 'ROLLED_BACK';
-    rollbackReason = `Seller has insufficient energy reserve (${formatNumber(seller.energy)} kWh available vs ${formatNumber(amount)} kWh requested).`;
-  } else if (buyer.balance < cost) {
-    status = 'ROLLED_BACK';
-    rollbackReason = `Buyer has insufficient account balance (${formatCurrency(buyer.balance)} vs ${formatCurrency(cost)} required).`;
+  const button = e.currentTarget.querySelector('button[type="submit"]');
+  if (button.disabled) return;
+  button.disabled = true;
+  try {
+    const result = await apiRequest('/trade', { sellerNodeId: $('sellerSelect').value,
+      buyerNodeId: $('buyerSelect').value, energyKwh: $('tradeAmount').value });
+    renderTradeReceiptSuccess(result.tradeId, result.sellerNodeId, result.buyerNodeId,
+      result.energyKwh, result.pricePerKwh, result.totalCost);
+    showToast(result.message, 'success');
+  } catch (error) {
+    renderTradeReceiptRollback('Not assigned', error.message, error.httpStatus === 400 || error.httpStatus === 404);
+    showToast(error.message, 'danger');
+  } finally {
+    await refreshAllData(true);
+    button.disabled = false;
   }
-
-  // If COMMITTED, update state balances and energy
-  if (status === 'COMMITTED') {
-    seller.energy -= amount;
-    buyer.energy += amount;
-    seller.balance += cost;
-    buyer.balance -= cost;
-    seller.lastUpdated = 'Just now';
-    buyer.lastUpdated = 'Just now';
-
-    // Add to Audit Log
-    state.audits.unshift({
-      id: txId,
-      timestamp: nowTime,
-      event: 'P2P ENERGY TRADE',
-      seller: seller.name,
-      buyer: buyer.name,
-      energy: `${formatNumber(amount)} kWh`,
-      price: `₹${formatNumber(metrics.dynamicPrice, 2)}/kWh`,
-      cost: formatCurrency(cost),
-      status: 'COMMITTED',
-      details: 'Atomic transaction committed: funds debited and energy credited via simulated JDBC layer.'
-    });
-
-    renderTradeReceiptSuccess(txId, seller.name, buyer.name, amount, metrics.dynamicPrice, cost);
-    showToast(`✓ Trade ${txId} committed successfully!`, 'success');
-  } else {
-    // ROLLED BACK
-    state.audits.unshift({
-      id: txId,
-      timestamp: nowTime,
-      event: 'P2P ENERGY TRADE',
-      seller: seller ? seller.name : 'Unknown',
-      buyer: buyer ? buyer.name : 'Unknown',
-      energy: `${formatNumber(amount)} kWh`,
-      price: `₹${formatNumber(metrics.dynamicPrice, 2)}/kWh`,
-      cost: formatCurrency(cost),
-      status: 'ROLLED_BACK',
-      details: rollbackReason
-    });
-
-    renderTradeReceiptRollback(txId, rollbackReason);
-    showToast(`✕ Trade ${txId} rolled back: ${rollbackReason}`, 'danger');
-  }
-
-  // Re-render UI
-  renderDashboard();
-  renderNodesTable();
-  renderAuditLogs();
 }
 
 /** Render Success Receipt */
@@ -772,19 +551,19 @@ function renderTradeReceiptSuccess(id, seller, buyer, energy, price, total) {
       <div class="receipt-rows">
         <div class="receipt-row">
           <span class="receipt-label">Transaction ID:</span>
-          <span class="receipt-val text-teal">${id}</span>
+          <span class="receipt-val text-teal">${escapeHtml(id)}</span>
         </div>
         <div class="receipt-row">
           <span class="receipt-label">Seller Node:</span>
-          <span class="receipt-val">${seller}</span>
+          <span class="receipt-val">${escapeHtml(seller)}</span>
         </div>
         <div class="receipt-row">
           <span class="receipt-label">Buyer Node:</span>
-          <span class="receipt-val">${buyer}</span>
+          <span class="receipt-val">${escapeHtml(buyer)}</span>
         </div>
         <div class="receipt-row">
           <span class="receipt-label">Energy Transferred:</span>
-          <span class="receipt-val">${formatNumber(energy)} kWh</span>
+          <span class="receipt-val">${formatNumber(energy, 2)} kWh</span>
         </div>
         <div class="receipt-row">
           <span class="receipt-label">Dynamic Unit Tariff:</span>
@@ -801,7 +580,7 @@ function renderTradeReceiptSuccess(id, seller, buyer, energy, price, total) {
 }
 
 /** Render Rollback Receipt */
-function renderTradeReceiptRollback(id, reason) {
+function renderTradeReceiptRollback(id, reason, rejected = true) {
   const container = $('tradeResultContainer');
   if (!container) return;
 
@@ -810,93 +589,59 @@ function renderTradeReceiptRollback(id, reason) {
       <div class="receipt-header">
         <div class="receipt-status-title rollback">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-          <span>TRANSACTION ROLLED BACK</span>
+          <span>${rejected ? 'TRADE REJECTED / ROLLED BACK' : 'TRANSACTION STATUS UNCONFIRMED'}</span>
         </div>
-        <span class="status-badge badge-danger">ROLLED BACK</span>
+        <span class="status-badge badge-danger">${rejected ? 'REJECTED' : 'UNCONFIRMED'}</span>
       </div>
 
       <div class="receipt-rows">
         <div class="receipt-row">
           <span class="receipt-label">Transaction ID:</span>
-          <span class="receipt-val text-danger">${id}</span>
+          <span class="receipt-val text-danger">${escapeHtml(id)}</span>
         </div>
         <div class="receipt-row">
           <span class="receipt-label">Status:</span>
-          <span class="receipt-val text-danger">ROLLED BACK</span>
+          <span class="receipt-val text-danger">${rejected ? 'REJECTED' : 'UNCONFIRMED'}</span>
         </div>
       </div>
 
       <div class="receipt-reason-box">
-        <strong>Reason for Rollback:</strong>
-        <p style="margin-top: 4px;">${reason}</p>
+        <strong>Details:</strong>
+        <p style="margin-top: 4px;">${escapeHtml(reason)}</p>
       </div>
     </div>
   `;
 }
 
 /** Register New Node Submission */
-function handleRegisterNode(e) {
+async function handleRegisterNode(e) {
   e.preventDefault();
+  const button = e.currentTarget.querySelector('button[type="submit"]');
+  if (button.disabled) return;
+  button.disabled = true;
+  try {
+    const result = await apiRequest('/nodes', {
+      name: $('newNodeName').value.trim(), type: $('newNodeType').value,
+      location: $('newNodeLocation').value.trim(), maxCapacityKwh: $('newNodeCapacity').value,
+      availableEnergyKwh: $('newNodeEnergy').value, currentOutputKw: $('newNodeOutput').value,
+      priority: $('newNodePriority').value, balance: $('newNodeBalance').value
+    });
+    $('nodeModal').close(); $('nodeForm').reset();
+    showToast('Node ' + result.nodeId + ' registered.', 'success');
+    await refreshAllData(true);
+  } catch (error) { showToast(error.message, 'danger'); }
+  finally { button.disabled = false; }
+}
 
-  const name = $('newNodeName').value.trim();
-  const type = $('newNodeType').value;
-  const location = $('newNodeLocation').value.trim();
-  const capacity = Number($('newNodeCapacity').value) || 50;
-  const output = Number($('newNodeOutput').value) || 0;
-  const priority = Number($('newNodePriority').value) || 3;
-  const balance = Number($('newNodeBalance').value) || 500;
-
-  // Generate ID based on Type
-  const prefixMap = {
-    'SOLAR_PRODUCER': 'SOLAR',
-    'CONSUMER': 'CONS',
-    'EV_STATION': 'EV',
-    'BATTERY_STORAGE': 'BAT'
-  };
-  const prefix = prefixMap[type] || 'NODE';
-  const index = state.nodes.length + 1;
-  const newId = `NODE-${prefix}-${String(index).padStart(2, '0')}`;
-
-  const newNode = {
-    id: newId,
-    name,
-    type,
-    location,
-    energy: output > 0 ? 25.0 : 0.0,
-    capacity,
-    output,
-    balance,
-    priority,
-    status: 'ONLINE',
-    lastUpdated: 'Just now'
-  };
-
-  state.nodes.push(newNode);
-
-  // Close modal & reset form
-  const modal = $('nodeModal');
-  if (modal) modal.close();
-  $('nodeForm').reset();
-
-  // Add system audit
-  state.audits.unshift({
-    id: `EVT-${1000 + state.audits.length + 1}`,
-    timestamp: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
-    event: 'NODE REGISTRATION',
-    seller: 'Grid Operator',
-    buyer: name,
-    energy: `${formatNumber(capacity)} kWh cap`,
-    price: 'N/A',
-    cost: formatCurrency(balance),
-    status: 'SUCCESS',
-    details: `New ${getReadableType(type)} registered at ${location} with Priority P${priority}.`
-  });
-
-  showToast(`✓ Node ${name} (${newId}) registered successfully!`, 'success');
-
-  renderDashboard();
-  renderNodesTable();
-  renderAuditLogs();
+async function handleLoadShedding() {
+  const button = $('loadSheddingBtn');
+  if (button.disabled) return;
+  button.disabled = true;
+  try {
+    const result = await apiRequest('/load-shedding', {});
+    showToast(result.message, 'info');
+  } catch (error) { showToast(error.message, 'danger'); }
+  finally { await refreshAllData(true); button.disabled = !state.connected; }
 }
 
 /** Theme Toggle Handler */
@@ -935,7 +680,7 @@ function initNavigation() {
     'dashboard': { title: 'Smart Micro-Grid Control Room', subtitle: 'Local renewable energy monitoring and trading' },
     'nodes': { title: 'Micro-Grid Node Registry', subtitle: 'Active producer and consumer node ledger' },
     'trade': { title: 'P2P Energy Trading Engine', subtitle: 'Direct peer-to-peer decentralized energy market' },
-    'audit': { title: 'System History & Audit Ledger', subtitle: 'Immutable log of micro-grid transactions and events' }
+    'audit': { title: 'System History & Audit Ledger', subtitle: 'Operational history of micro-grid transactions and events' }
   };
 
   navButtons.forEach(btn => {
@@ -975,7 +720,7 @@ function showToast(message, type = 'info') {
 
   const toast = document.createElement('div');
   toast.className = `toast-item toast-${type}`;
-  toast.innerHTML = `<span>${message}</span>`;
+  toast.textContent = message;
   container.appendChild(toast);
 
   setTimeout(() => {
@@ -1001,7 +746,7 @@ function initApp() {
   // Theme & Navigation
   initTheme();
   initNavigation();
-  updateTimestamp();
+  $('lastUpdatedTime').textContent = 'Not loaded';
 
   // Modal handlers
   const modal = $('nodeModal');
@@ -1032,21 +777,15 @@ function initApp() {
   });
 
   // Refresh Button
-  $('refreshBtn')?.addEventListener('click', () => {
-    updateTimestamp();
-    renderDashboard();
-    renderNodesTable();
-    renderAuditLogs();
-    showToast('Telemetry updated with latest micro-grid metrics.', 'info');
-  });
+  $('refreshBtn')?.addEventListener('click', () => refreshAllData());
+  $('loadSheddingBtn')?.addEventListener('click', handleLoadShedding);
 
   // Initial Full Render
   renderDashboard();
   renderNodesTable();
   renderAuditLogs();
 
-  // Replace demo nodes with the records from the Java backend.
-  loadNodesFromBackend();
+  refreshAllData();
 }
 
 // Run when DOM is ready

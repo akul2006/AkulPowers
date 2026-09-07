@@ -1,142 +1,41 @@
 import java.util.List;
+import java.util.Map;
 
 public class GridStabilityService {
-
-    private GridNodeDAO nodeDAO;
-
-    public GridStabilityService() {
-        nodeDAO = new GridNodeDAO();
+    public record GridStatus(double generation, double consumption, double netReserve, String status) {
+        public Map<String, Object> toMap() {
+            return Map.of("generation", generation, "consumption", consumption,
+                    "netReserve", netReserve, "status", status);
+        }
     }
 
+    public GridStatus getSnapshot() {
+        return calculate(new GridNodeDAO().getAllNodes());
+    }
 
-    public double getTotalGeneration() {
-
-        List<GridNode> nodes =
-                nodeDAO.getAllNodes();
-
-        double totalGeneration = 0.0;
-
+    // THROTTLED means fully shed: only ONLINE nodes participate in live power totals.
+    public GridStatus calculate(List<GridNode> nodes) {
+        double generation = 0, consumption = 0;
         for (GridNode node : nodes) {
-
-            if (
-                node.getStatus().equals("ONLINE")
-                && node.getCurrentOutputKw() > 0
-            ) {
-
-                totalGeneration +=
-                        node.getCurrentOutputKw();
-            }
+            if (!"ONLINE".equals(node.getStatus())) continue;
+            if (node.getCurrentOutputKw() > 0) generation += node.getCurrentOutputKw();
+            else consumption -= node.getCurrentOutputKw();
         }
-
-        return totalGeneration;
+        double reserve = generation - consumption;
+        String status = reserve > 5 ? "STABLE" : reserve >= 0 ? "WARNING" : "DEFICIT";
+        return new GridStatus(generation, consumption, reserve, status);
     }
 
-
-    public double getTotalConsumption() {
-
-        List<GridNode> nodes =
-                nodeDAO.getAllNodes();
-
-        double totalConsumption = 0.0;
-
-        for (GridNode node : nodes) {
-
-            if (
-                node.getStatus().equals("ONLINE")
-                && node.getCurrentOutputKw() < 0
-            ) {
-
-                totalConsumption +=
-                        Math.abs(
-                            node.getCurrentOutputKw()
-                        );
-            }
-        }
-
-        return totalConsumption;
-    }
-
-
-    public double getNetReserve() {
-
-        double generation =
-                getTotalGeneration();
-
-        double consumption =
-                getTotalConsumption();
-
-        return generation - consumption;
-    }
-
-
-    public String getGridStatus() {
-
-        double netReserve =
-                getNetReserve();
-
-        if (netReserve > 5) {
-
-            return "STABLE";
-
-        } else if (netReserve >= 0) {
-
-            return "WARNING";
-
-        } else {
-
-            return "DEFICIT";
-        }
-    }
-
+    public double getTotalGeneration() { return getSnapshot().generation(); }
+    public double getTotalConsumption() { return getSnapshot().consumption(); }
+    public double getNetReserve() { return getSnapshot().netReserve(); }
+    public String getGridStatus() { return getSnapshot().status(); }
 
     public void displayGridStatus() {
-
-        double generation =
-                getTotalGeneration();
-
-        double consumption =
-                getTotalConsumption();
-
-        double reserve =
-                generation - consumption;
-
-        String status;
-
-        if (reserve > 5) {
-
-            status = "STABLE";
-
-        } else if (reserve >= 0) {
-
-            status = "WARNING";
-
-        } else {
-
-            status = "DEFICIT";
-        }
-
-
-        System.out.println(
-                "Total Generation: "
-                + generation
-                + " kW"
-        );
-
-        System.out.println(
-                "Total Consumption: "
-                + consumption
-                + " kW"
-        );
-
-        System.out.println(
-                "Net Reserve: "
-                + reserve
-                + " kW"
-        );
-
-        System.out.println(
-                "Grid Status: "
-                + status
-        );
+        GridStatus grid = getSnapshot();
+        System.out.println("Total Generation: " + grid.generation() + " kW");
+        System.out.println("Total Consumption: " + grid.consumption() + " kW");
+        System.out.println("Net Reserve: " + grid.netReserve() + " kW");
+        System.out.println("Grid Status: " + grid.status());
     }
 }

@@ -1,113 +1,46 @@
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.sql.*;
+import java.util.*;
 
 public class LoadSheddingService {
-
-    private GridNodeDAO nodeDAO;
-    private GridStabilityService stabilityService;
-    private AuditLogDAO auditLogDAO;
-
-    public LoadSheddingService() {
-
-        nodeDAO = new GridNodeDAO();
-        stabilityService = new GridStabilityService();
-        auditLogDAO = new AuditLogDAO();
-    }
-
-    public void performLoadShedding() {
-
-        double generation = stabilityService.getTotalGeneration();
-
-        double consumption = stabilityService.getTotalConsumption();
-
-        double deficit = consumption - generation;
-
-        if (deficit <= 0) {
-
-            System.out.println(
-                    "Grid has no deficit. Load shedding not required.");
-
-            return;
-        }
-
-        System.out.println(
-                "Grid deficit detected: "
-                        + deficit
-                        + " kW");
-
-        List<GridNode> allNodes = nodeDAO.getAllNodes();
-
-        List<GridNode> candidates = new ArrayList<>();
-
-        for (GridNode node : allNodes) {
-
-            if (node.getStatus().equals("ONLINE")
-                    &&
-                    node.getCurrentOutputKw() < 0
-                    &&
-                    node.getPriority() > 1) {
-
-                candidates.add(node);
+    public Map<String, Object> performLoadShedding() {
+        GridNodeDAO dao = new GridNodeDAO();
+        GridStabilityService stability = new GridStabilityService();
+        try (Connection c = DBConnection.getConnection()) {
+            c.setAutoCommit(false);
+            try {
+                // Lock the snapshot and only update status, never overwrite traded balances/energy.
+                List<GridNode> nodes = dao.getAllNodes(c, true);
+                double deficit = -stability.calculate(nodes).netReserve();
+                List<String> shed = new ArrayList<>();
+                double reduced = 0;
+                nodes.sort(Comparator.comparingInt(GridNode::getPriority).reversed());
+                for (GridNode node : nodes) {
+                    if (reduced >= deficit) break;
+                    if (!"ONLINE".equals(node.getStatus()) || node.getCurrentOutputKw() >= 0
+                            || node.getPriority() <= 1) continue;
+                    try (PreparedStatement s = c.prepareStatement(
+                            "UPDATE nodes SET status='THROTTLED', last_updated=CURRENT_TIMESTAMP WHERE node_id=?")) {
+                        s.setString(1, node.getNodeId());
+                        if (s.executeUpdate() != 1) throw new SQLException("Node status update failed.");
+                    }
+                    node.setStatus("THROTTLED");
+                    reduced += Math.abs(node.getCurrentOutputKw());
+                    shed.add(node.getNodeId());
+                    new AuditLogDAO().logEvent(c, "LOAD_SHEDDING", null, node.getNodeId(),
+                            node.getName() + " throttled; reduced demand by " + Math.abs(node.getCurrentOutputKw()) + " kW.", "SUCCESS");
+                }
+                c.commit();
+                String message = deficit <= 0 ? "No deficit; no nodes changed."
+                        : reduced >= deficit ? "Load shedding resolved the deficit."
+                        : "Available loads shed; deficit remains. Priority 1 is protected.";
+                return Map.of("success", true, "shedNodeIds", shed, "reducedLoadKw", reduced,
+                        "gridStatus", stability.calculate(nodes).toMap(), "message", message);
+            } catch (SQLException | RuntimeException e) {
+                c.rollback();
+                throw e;
             }
-        }
-
-        candidates.sort(
-                Comparator.comparingInt(
-                        GridNode::getPriority).reversed());
-
-        double reducedLoad = 0.0;
-
-        for (GridNode node : candidates) {
-
-            if (reducedLoad >= deficit) {
-                break;
-            }
-
-            double nodeConsumption = Math.abs(
-                    node.getCurrentOutputKw());
-
-            node.setStatus("THROTTLED");
-
-            boolean updated = nodeDAO.updateNode(node);
-
-            if (updated) {
-
-                reducedLoad += nodeConsumption;
-
-                System.out.println(
-                        "Throttled: "
-                                + node.getName()
-                                + " | Reduced load: "
-                                + nodeConsumption
-                                + " kW");
-
-                auditLogDAO.logEvent(
-                        "LOAD_SHEDDING",
-                        null,
-                        node.getNodeId(),
-                        node.getName()
-                                + " was throttled due to grid deficit.",
-                        "SUCCESS");
-            }
-        }
-
-        System.out.println();
-
-        System.out.println(
-                "Total load reduced: "
-                        + reducedLoad
-                        + " kW");
-
-        if (reducedLoad >= deficit) {
-
-            System.out.println(
-                    "Grid deficit handled successfully.");
-
-        } else {
-
-            System.out.println(
-                    "Warning: Available load shedding was not enough to remove the deficit.");
+        } catch (SQLException e) {
+            throw new IllegalStateException("Load shedding failed; changes rolled back.", e);
         }
     }
 }

@@ -2,223 +2,94 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.UUID;
 
 public class TradingEngine {
+    private final PricingEngine pricingEngine = new PricingEngine();
+    private final AuditLogDAO auditLogDAO = new AuditLogDAO();
 
-    private PricingEngine pricingEngine;
-    private AuditLogDAO auditLogDAO;
-
-    public TradingEngine() {
-        pricingEngine = new PricingEngine();
-        auditLogDAO = new AuditLogDAO();
+    // Preserve the console examples; HTTP callers receive the full receipt instead.
+    public boolean processTrade(String sellerId, String buyerId, double energy,
+            double generation, double consumption, boolean peakHour, double weatherFactor) {
+        TradeResult result = executeTrade(sellerId, buyerId, energy, generation, consumption, peakHour, weatherFactor);
+        System.out.println(result.message());
+        return result.success();
     }
 
-    public boolean processTrade(
-            String sellerNodeId,
-            String buyerNodeId,
-            double energyKwh,
-            double totalGenerationKw,
-            double totalConsumptionKw,
-            boolean peakHour,
-            double weatherFactor) {
-
-        Connection connection = null;
-
+    public TradeResult executeTrade(String sellerId, String buyerId, double energy,
+            double generation, double consumption, boolean peakHour, double weatherFactor) {
+        double price = 0, cost = 0;
+        int failureStatus = 400;
         try {
-
-            connection = DBConnection.getConnection();
-
-            connection.setAutoCommit(false);
-
-            GridNode seller = getNodeById(connection, sellerNodeId);
-
-            GridNode buyer = getNodeById(connection, buyerNodeId);
-
-            if (seller == null) {
-                throw new SQLException(
-                        "Seller node does not exist.");
-            }
-
-            if (buyer == null) {
-                throw new SQLException(
-                        "Buyer node does not exist.");
-            }
-
-            if (sellerNodeId.equals(buyerNodeId)) {
-                throw new SQLException(
-                        "Seller and buyer cannot be the same node.");
-            }
-
-            if (!seller.getStatus().equals("ONLINE")) {
-                throw new SQLException(
-                        "Seller node is not online.");
-            }
-
-            if (!buyer.getStatus().equals("ONLINE")) {
-                throw new SQLException(
-                        "Buyer node is not online.");
-            }
-
-            if (energyKwh <= 0) {
-                throw new SQLException(
-                        "Energy amount must be greater than zero.");
-            }
-
-            if (seller.getAvailableEnergyKwh() < energyKwh) {
-                throw new SQLException(
-                        "Seller does not have enough energy.");
-            }
-
-            double pricePerKwh = pricingEngine.calculatePrice(
-                    totalGenerationKw,
-                    totalConsumptionKw,
-                    peakHour,
-                    weatherFactor);
-
-            double totalCost = energyKwh * pricePerKwh;
-
-            if (buyer.getBalance() < totalCost) {
-                throw new SQLException(
-                        "Buyer does not have enough balance.");
-            }
-
-            double newSellerEnergy = seller.getAvailableEnergyKwh()
-                    - energyKwh;
-
-            double newBuyerEnergy = buyer.getAvailableEnergyKwh()
-                    + energyKwh;
-
-            double newSellerBalance = seller.getBalance()
-                    + totalCost;
-
-            double newBuyerBalance = buyer.getBalance()
-                    - totalCost;
-
-            if (newBuyerEnergy > buyer.getMaxCapacityKwh()) {
-
-                throw new SQLException(
-                        "Buyer does not have enough energy capacity.");
-            }
-
-            updateEnergyAndBalance(
-                    connection,
-                    sellerNodeId,
-                    newSellerEnergy,
-                    newSellerBalance);
-
-            updateEnergyAndBalance(
-                    connection,
-                    buyerNodeId,
-                    newBuyerEnergy,
-                    newBuyerBalance);
-
-            String tradeId = "TX-" +
-                    UUID.randomUUID()
-                            .toString()
-                            .substring(0, 8)
-                            .toUpperCase();
-
-            insertTrade(
-                    connection,
-                    tradeId,
-                    sellerNodeId,
-                    buyerNodeId,
-                    energyKwh,
-                    pricePerKwh,
-                    totalCost);
-
-            connection.commit();
-
-            System.out.println();
-            System.out.println(
-                    "Trade committed successfully!");
-
-            auditLogDAO.logEvent(
-                    "ENERGY_TRADE",
-                    tradeId,
-                    null,
-                    "Energy trade completed successfully between "
-                            + sellerNodeId
-                            + " and "
-                            + buyerNodeId
-                            + ".",
-                    "COMMITTED");
-
-            System.out.println(
-                    "Trade ID: " + tradeId);
-
-            System.out.println(
-                    "Energy: " + energyKwh + " kWh");
-
-            System.out.println(
-                    "Price: Rs. "
-                            + pricePerKwh
-                            + " per kWh");
-
-            System.out.println(
-                    "Total Cost: Rs. "
-                            + totalCost);
-
-            return true;
-
-        } catch (Exception e) {
-
-            if (connection != null) {
-
+            if (sellerId == null || buyerId == null || sellerId.isBlank() || buyerId.isBlank())
+                throw new IllegalArgumentException("Seller and buyer are required.");
+            if (sellerId.equals(buyerId)) throw new IllegalArgumentException("Seller and buyer cannot be the same node.");
+            if (!Double.isFinite(energy) || energy <= 0 || energy >= 100000000
+                    || BigDecimal.valueOf(energy).stripTrailingZeros().scale() > 2)
+                throw new IllegalArgumentException("Energy must be positive with at most two decimal places.");
+            price = pricingEngine.calculatePrice(generation, consumption, peakHour, weatherFactor);
+            cost = BigDecimal.valueOf(energy).multiply(BigDecimal.valueOf(price))
+                    .setScale(2, RoundingMode.HALF_UP).doubleValue();
+            try (Connection connection = DBConnection.getConnection()) {
+                // ONE connection owns all locks, energy/fund updates, trade and success audit.
+                connection.setAutoCommit(false);
                 try {
-
+                    // Consistent lock order avoids deadlocks in opposing trades.
+                    GridNode first = getNodeById(connection, sellerId.compareTo(buyerId) < 0 ? sellerId : buyerId);
+                    GridNode second = getNodeById(connection, sellerId.compareTo(buyerId) < 0 ? buyerId : sellerId);
+                    GridNode seller = sellerId.compareTo(buyerId) < 0 ? first : second;
+                    GridNode buyer = sellerId.compareTo(buyerId) < 0 ? second : first;
+                    if (seller == null || buyer == null) {
+                        failureStatus = 404;
+                        throw new IllegalArgumentException("Seller or buyer node does not exist.");
+                    }
+                    if (!"ONLINE".equals(seller.getStatus())) throw new IllegalArgumentException("Seller node is not online.");
+                    if (!"ONLINE".equals(buyer.getStatus())) throw new IllegalArgumentException("Buyer node is not online.");
+                    if (seller.getAvailableEnergyKwh() < energy) throw new IllegalArgumentException("Seller does not have enough energy.");
+                    if (buyer.getBalance() < cost) throw new IllegalArgumentException("Buyer does not have enough balance.");
+                    if (buyer.getAvailableEnergyKwh() + energy > buyer.getMaxCapacityKwh())
+                        throw new IllegalArgumentException("Buyer does not have enough energy capacity.");
+                    if (seller.getBalance() + cost >= 10000000000.0)
+                        throw new IllegalArgumentException("Trade exceeds the seller account balance limit.");
+                    updateEnergyAndBalance(connection, sellerId, seller.getAvailableEnergyKwh() - energy, seller.getBalance() + cost);
+                    updateEnergyAndBalance(connection, buyerId, buyer.getAvailableEnergyKwh() + energy, buyer.getBalance() - cost);
+                    String tradeId = "TX-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+                    insertTrade(connection, tradeId, sellerId, buyerId, energy, price, cost);
+                    auditLogDAO.logEvent(connection, "ENERGY_TRADE", tradeId, null,
+                            energy + " kWh traded from " + sellerId + " to " + buyerId + ".", "COMMITTED");
+                    connection.commit();
+                    return new TradeResult(true, 200, tradeId, sellerId, buyerId, energy, price, cost, "Trade committed successfully.");
+                } catch (SQLException | RuntimeException e) {
+                    // Roll back before the failure audit uses its own connection.
                     connection.rollback();
-
-                    System.out.println(
-                            "Transaction rolled back.");
-
-                } catch (SQLException rollbackException) {
-
-                    rollbackException.printStackTrace();
+                    throw e;
                 }
             }
-
-            auditLogDAO.logEvent(
-                    "ENERGY_TRADE",
-                    null,
-                    null,
-                    "Trade failed between "
-                            + sellerNodeId
-                            + " and "
-                            + buyerNodeId
-                            + ": "
-                            + e.getMessage(),
-                    "ROLLED_BACK");
-
-            System.out.println(
-                    "Trade failed: "
-                            + e.getMessage());
-
-            return false;
-
-        } finally {
-
-            if (connection != null) {
-
-                try {
-
-                    connection.setAutoCommit(true);
-                    connection.close();
-
-                } catch (SQLException e) {
-
-                    e.printStackTrace();
-                }
-            }
+        } catch (IllegalArgumentException e) {
+            return failure(failureStatus, sellerId, buyerId, energy, price, cost, e.getMessage());
+        } catch (SQLException e) {
+            System.err.println("Trade database error: " + e.getSQLState());
+            return failure(500, sellerId, buyerId, energy, price, cost,
+                    "Database error. Refresh nodes and audit logs to verify the transaction before retrying.");
         }
+    }
+
+    private TradeResult failure(int status, String seller, String buyer, double energy, double price, double cost, String message) {
+        boolean logged = auditLogDAO.logEvent("ENERGY_TRADE", null, null,
+                "Trade " + seller + " -> " + buyer + " failed: " + message,
+                status == 500 ? "FAILED" : "ROLLED_BACK");
+        if (!logged) message += " Failure audit could not be saved.";
+        return new TradeResult(false, status, "", seller == null ? "" : seller, buyer == null ? "" : buyer,
+                Double.isFinite(energy) ? energy : 0, price, cost, message);
     }
 
     private GridNode getNodeById(
             Connection connection,
             String nodeId) throws SQLException {
 
-        String sql = "SELECT * FROM nodes WHERE node_id = ?";
+        String sql = "SELECT * FROM nodes WHERE node_id = ? FOR UPDATE";
 
         try (
                 PreparedStatement statement = connection.prepareStatement(sql)) {

@@ -1822,6 +1822,26 @@ select {
 }
 
 @media (max-width: 640px) {
+  .topbar {
+    height: auto;
+    min-height: 72px;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+  .topbar-left, .topbar-right {
+    width: 100%;
+  }
+  .topbar-right {
+    justify-content: flex-end;
+  }
+  .stability-stats-bar {
+    flex-wrap: wrap;
+  }
+  .stability-divider {
+    display: none;
+  }
   .metrics-grid {
     grid-template-columns: 1fr 1fr;
   }
@@ -1840,4 +1860,9 @@ select {
   .topbar-subtitle, .timestamp-box {
     display: none;
   }
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: wait;
 }
