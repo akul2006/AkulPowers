@@ -1,15 +1,4 @@
-/**
- * FLUXGRID OS — Smart Micro-Grid Energy & P2P Trading Engine
- * Author: Akul Powers
- * Description: Clean Vanilla JavaScript Controller for Micro-Grid Dashboard & P2P Engine.
- * Designed for College Project Demonstration (HTML + CSS + JS -> Java -> JDBC -> PostgreSQL)
- */
-
-// ==========================================
-// 1. STATE & DEMO DATA
-// ==========================================
 const state = {
-  // Micro-grid nodes
   nodes: [
     {
       id: 'NODE-SOLAR-01',
@@ -104,7 +93,6 @@ const state = {
     }
   ],
 
-  // Dynamic Pricing Calculation Factors
   pricing: {
     baseRate: 5.00,
     demandFactor: 1.20,
@@ -112,7 +100,6 @@ const state = {
     weatherFactor: 1.10
   },
 
-  // Daily Summary Cumulative Telemetry
   dailySummary: {
     generatedToday: 684.2,
     consumedToday: 572.8,
@@ -120,7 +107,6 @@ const state = {
     netBalance: 111.4
   },
 
-  // 24-Hour Telemetry Curve Points (kW for Gen and Cons)
   chartData: [
     { time: '00:00', gen: 10, cons: 28 },
     { time: '04:00', gen: 15, cons: 24 },
@@ -130,7 +116,6 @@ const state = {
     { time: '20:00', gen: 50, cons: 60 }
   ],
 
-  // System Audit Trail
   audits: [
     {
       id: 'TX-1003',
@@ -171,12 +156,8 @@ const state = {
   ]
 };
 
-// ==========================================
-// 2. HELPER UTILITIES
-// ==========================================
 const $ = (id) => document.getElementById(id);
 
-/** Formats a number to Indian Currency Rupee format */
 function formatCurrency(amount) {
   return new Intl.NumberFormat('en-IN', {
     style: 'currency',
@@ -186,12 +167,10 @@ function formatCurrency(amount) {
   }).format(amount);
 }
 
-/** Formats a decimal number with fixed precision */
 function formatNumber(val, decimals = 1) {
   return Number(val).toFixed(decimals);
 }
 
-/** Pretty label for Node Types */
 function getReadableType(type) {
   switch (type) {
     case 'SOLAR_PRODUCER': return 'Solar Producer';
@@ -202,7 +181,6 @@ function getReadableType(type) {
   }
 }
 
-/** CSS class for Node Types */
 function getTypeBadgeClass(type) {
   switch (type) {
     case 'SOLAR_PRODUCER': return 'type-solar';
@@ -213,16 +191,11 @@ function getTypeBadgeClass(type) {
   }
 }
 
-// ==========================================
-// 3. CORE CALCULATIONS
-// ==========================================
 function calculateGridMetrics() {
-  // Sum positive generation from non-offline nodes
   const totalGen = state.nodes
     .filter(n => n.status !== 'OFFLINE' && n.output > 0)
     .reduce((sum, n) => sum + n.output, 0);
 
-  // Sum load from non-offline consuming nodes (output < 0)
   const totalCons = Math.abs(
     state.nodes
       .filter(n => n.status !== 'OFFLINE' && n.output < 0)
@@ -1016,3 +989,4 @@ function initApp() {
 
 // Run when DOM is ready
 document.addEventListener('DOMContentLoaded', initApp);
+
