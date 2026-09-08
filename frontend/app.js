@@ -4,23 +4,6 @@ const state = {
   pricing: null,
   connected: false,
 
-  
-  dailySummary: {
-    generatedToday: 684.2,
-    consumedToday: 572.8,
-    renewableShare: 80,
-    netBalance: 111.4
-  },
-
-  chartData: [
-    { time: '00:00', gen: 10, cons: 28 },
-    { time: '04:00', gen: 15, cons: 24 },
-    { time: '08:00', gen: 45, cons: 42 },
-    { time: '12:00', gen: 75, cons: 50 },
-    { time: '16:00', gen: 62, cons: 54 },
-    { time: '20:00', gen: 50, cons: 60 }
-  ],
-
   audits: []
 };
 
@@ -193,13 +176,6 @@ function renderDashboard() {
   headerStatusPill.className = 'header-status-pill ' + (metrics.status === 'DEFICIT' ? 'danger' : metrics.status !== 'STABLE' ? '' : 'stable');
 
   
-  const maxKw = state.grid ? Math.max(metrics.generation, metrics.consumption, 70) : 70;
-  $('generationBar').style.width = `${state.grid ? (metrics.generation / maxKw) * 100 : 0}%`;
-  $('consumptionBar').style.width = `${state.grid ? (metrics.consumption / maxKw) * 100 : 0}%`;
-  $('generationBarText').textContent = `${formatNumber(metrics.generation)} kW`;
-  $('consumptionBarText').textContent = `${formatNumber(metrics.consumption)} kW`;
-
-  
   $('pricingCurrent').textContent = '₹' + formatNumber(metrics.dynamicPrice, 2);
   $('baseRate').textContent = formatCurrency(state.pricing?.basePrice) + '/kWh';
   $('demandFactor').textContent = formatNumber(state.pricing?.supplyDemandFactor, 2) + '×';
@@ -209,13 +185,6 @@ function renderDashboard() {
   $('priceBadgeAlert').textContent = state.pricing ? 'Current backend tariff' : 'Waiting for pricing';
   $('pricingExplanation').textContent = 'Tariff uses live supply and demand, a local evening peak factor (18:00-22:00), and neutral simulated weather (1.00). The final trade receipt uses the execution-time price.';
 
-  
-  $('generatedToday').textContent = `${formatNumber(state.dailySummary.generatedToday)} kWh`;
-  $('consumedToday').textContent = `${formatNumber(state.dailySummary.consumedToday)} kWh`;
-  $('renewableShareVal').textContent = `${state.dailySummary.renewableShare}%`;
-  $('netEnergyBalance').textContent = `+${formatNumber(state.dailySummary.netBalance)} kWh`;
-
-  
   $('stabGen').textContent = `${formatNumber(metrics.generation)} kW`;
   $('stabCons').textContent = `${formatNumber(metrics.consumption)} kW`;
   const stabDeficit = $('stabDeficit');
@@ -235,9 +204,6 @@ function renderDashboard() {
 
   
   renderPriorityCards();
-
-  
-  if (state.grid) renderEnergySvgChart(metrics.generation, metrics.consumption);
 
   
   $('tradePrice').textContent = `₹${formatNumber(metrics.dynamicPrice, 2)} / kWh`;
@@ -274,71 +240,6 @@ function renderPriorityCards() {
       </div>
     `;
   }).join('');
-}
-
-
-function renderEnergySvgChart(currentGen, currentCons) {
-  
-  const width = 600;
-  const height = 240;
-  const paddingLeft = 55;
-  const paddingRight = 30;
-  const paddingTop = 30;
-  const paddingBottom = 60;
-
-  const plotWidth = width - paddingLeft - paddingRight;
-  const plotHeight = height - paddingTop - paddingBottom;
-  const maxY = Math.max(80, Math.ceil(Math.max(currentGen, currentCons) / 20) * 20);
-  document.querySelectorAll('#energySvgChart .chart-axis-text').forEach((label, index) => {
-    if (index < 4) label.textContent = formatNumber(maxY * (1 - index / 3), 0) + ' kW';
-  });
-
-  
-  const points = [...state.chartData, { time: 'Now', gen: currentGen, cons: currentCons }];
-
-  function getX(index) {
-    return paddingLeft + (index / (points.length - 1)) * plotWidth;
-  }
-
-  function getY(value) {
-    const clamped = Math.max(0, Math.min(value, maxY));
-    return paddingTop + plotHeight - (clamped / maxY) * plotHeight;
-  }
-
-  
-  let genLineD = `M ${getX(0)} ${getY(points[0].gen)}`;
-  let consLineD = `M ${getX(0)} ${getY(points[0].cons)}`;
-
-  for (let i = 1; i < points.length; i++) {
-    const prevX = getX(i - 1);
-    const prevYGen = getY(points[i - 1].gen);
-    const currX = getX(i);
-    const currYGen = getY(points[i].gen);
-
-    const prevYCons = getY(points[i - 1].cons);
-    const currYCons = getY(points[i].cons);
-
-    
-    const cp1x = prevX + (currX - prevX) / 2;
-    const cp2x = cp1x;
-
-    genLineD += ` C ${cp1x} ${prevYGen}, ${cp2x} ${currYGen}, ${currX} ${currYGen}`;
-    consLineD += ` C ${cp1x} ${prevYCons}, ${cp2x} ${currYCons}, ${currX} ${currYCons}`;
-  }
-
-  const baselineY = paddingTop + plotHeight;
-  const genAreaD = `${genLineD} L ${getX(points.length - 1)} ${baselineY} L ${getX(0)} ${baselineY} Z`;
-  const consAreaD = `${consLineD} L ${getX(points.length - 1)} ${baselineY} L ${getX(0)} ${baselineY} Z`;
-
-  const genLineEl = $('chartGenLine');
-  const consLineEl = $('chartConsLine');
-  const genAreaEl = $('chartGenArea');
-  const consAreaEl = $('chartConsArea');
-
-  if (genLineEl) genLineEl.setAttribute('d', genLineD);
-  if (consLineEl) consLineEl.setAttribute('d', consLineD);
-  if (genAreaEl) genAreaEl.setAttribute('d', genAreaD);
-  if (consAreaEl) consAreaEl.setAttribute('d', consAreaD);
 }
 
 
