@@ -1,37 +1,30 @@
+import java.util.Map;
+
 public class Main {
 
     public static void main(String[] args) {
 
         System.out.println("FLUXGRID OS - Akul Power: Smart Micro-Grid Energy System");
 
-        GridStabilityService stabilityService = new GridStabilityService();
+        GridStabilityService.GridStatus grid = new GridStabilityService().getSnapshot();
 
         System.out.println("\nGRID STATUS");
 
-        stabilityService.displayGridStatus();
+        System.out.println("Total Generation: " + grid.generation() + " kW");
+        System.out.println("Total Consumption: " + grid.consumption() + " kW");
+        System.out.println("Net Reserve: " + grid.netReserve() + " kW");
+        System.out.println("Grid Status: " + grid.status());
 
-        System.out.println("\nLOAD SHEDDING");
+        Map<String, Object> pricing = new PricingEngine().getPricing(
+                grid.generation(), grid.consumption(),
+                PricingEngine.isPeakHour(), PricingEngine.WEATHER_FACTOR);
 
-        LoadSheddingService loadSheddingService = new LoadSheddingService();
-
-        loadSheddingService.performLoadShedding();
-
-        System.out.println("\nP2P ENERGY TRADE");
-
-        TradingEngine tradingEngine = new TradingEngine();
-
-        tradingEngine.processTrade(
-                "NODE-SOLAR-01",
-                "NODE-CONS-01",
-                10.0,
-                stabilityService.getTotalGeneration(),
-                stabilityService.getTotalConsumption(),
-                false,
-                1.0);
-
-        System.out.println("\nUPDATED GRID STATUS");
-
-        stabilityService.displayGridStatus();
+        System.out.println("\nCURRENT PRICING");
+        System.out.println("Base Price: INR " + pricing.get("basePrice") + " / kWh");
+        System.out.println("Supply/Demand Factor: " + pricing.get("supplyDemandFactor"));
+        System.out.println("Peak Factor: " + pricing.get("peakFactor"));
+        System.out.println("Weather Factor (simulated): " + pricing.get("weatherFactor"));
+        System.out.println("Dynamic Price: INR " + pricing.get("pricePerKwh") + " / kWh");
 
         System.out.println("\nFLUXGRID COMPLETE");
     }

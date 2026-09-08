@@ -20,13 +20,13 @@ No application framework or build tool is needed. The PostgreSQL JDBC driver is 
 | Node registration | Real database insert and audit event |
 | Load shedding | Java service updates PostgreSQL statuses and audit events |
 | Refresh | Fetches nodes, grid status, pricing and audit logs together |
-| Interface | Existing dashboard, chart, themes, navigation, receipts and modal |
+| Interface | Dashboard, themes, navigation, transaction receipts and node registration modal |
 
-Only labelled historical chart points and daily summary cards use sample values. The chart's **Now** point comes from the Java API. No frontend simulation changes balances, energy or node records. Connection failures are shown explicitly; previous readings may remain visible as stale data.
+Dashboard readings come from the Java API. Connection failures are shown explicitly; previous readings may remain visible as stale data.
 
 ## Database
 
-The application uses the existing database configured in `backend/DBConnection.java`. Its connection settings have not been changed. Do not replace them with guessed credentials.
+The application connects through `backend/DBConnection.java` using environment variables. `DB_URL` defaults to `jdbc:postgresql://localhost:5432/AkulPower`, and `DB_USER` defaults to `postgres`. `DB_PASSWORD` is required: a missing or blank value produces a clear configuration error before a connection is opened. No password is stored in source code.
 
 - `nodes`: identity, name, type, location, stored energy, capacity, live output/load, balance, priority, status and update time.
 - `energy_trades`: seller, buyer, energy, unit price, total cost, status, failure reason and trade time.
@@ -34,7 +34,7 @@ The application uses the existing database configured in `backend/DBConnection.j
 
 The existing schema requires positive capacity, nonnegative balances and stored energy, stored energy no greater than capacity, and priorities 1-4. Numeric energy/power values support two decimal places. Rejected trades are recorded in the audit trail; they do not create fictitious committed trades.
 
-The `database/` directory currently has no bootstrap SQL. This checkout uses your already-created PostgreSQL database. A fresh computer needs that existing schema restored before running the application.
+The repository does not include bootstrap SQL. This checkout uses your already-created PostgreSQL database. A fresh computer needs that existing schema restored before running the application.
 
 ## Run locally (Windows PowerShell)
 
@@ -44,13 +44,17 @@ The `database/` directory currently has no bootstrap SQL. This checkout uses you
    Start-Service postgresql-x64-18
    ```
 
-   Keep the existing database and login configured in `DBConnection.java`. There is no schema reset or automatic seeding.
+   Use your existing database and login. There is no schema reset or automatic seeding.
 
-2. In the repository root, compile and check the connection:
+2. In the repository root, configure the database for this PowerShell session, then compile and run the read-only console demo:
 
    ```powershell
+   $env:DB_PASSWORD="your_password" # Replace with your PostgreSQL password
+   # Optional: these are the defaults
+   $env:DB_USER="postgres"
+   $env:DB_URL="jdbc:postgresql://localhost:5432/AkulPower"
    javac -encoding UTF-8 -cp "lib/*" -d build backend/*.java
-   java -cp "build;lib/*" TestConnection
+   java -cp "build;lib/*" Main
    ```
 
 3. Start the API in that terminal and leave it running:
@@ -65,7 +69,7 @@ The `database/` directory currently has no bootstrap SQL. This checkout uses you
 
 5. Register nodes in Node Registry. Supply positive capacity and initial stored energy for a seller. Consumers can use negative output/load. Select ONLINE seller/buyer nodes, choose an energy amount and execute a trade. The receipt shows the actual execution-time price. Use **Refresh** to reload data and **Run Load Shedding** to handle a deficit.
 
-`Main.java` and the original test examples remain available. `Main`, `TestGridNodeDAO`, `TestTradingEngine` and `TestLoadShedding` perform actual database writes; they are console demonstrations rather than isolated tests.
+`Main.java` is a read-only console demo: it prints generation, consumption, net reserve, grid classification, dynamic price and pricing factors using the existing services. It does not change database records. Environment variables apply to the current terminal and its child processes; configure them again in a new terminal before running Java. Do not put your password in source files or commit a credentials file.
 
 ## API
 
@@ -95,26 +99,37 @@ Invoke-RestMethod http://localhost:8080/api/grid-status
 
 Grid status is STABLE when reserve exceeds 5 kW, WARNING from 0 through 5 kW, and DEFICIT below zero. THROTTLED and OFFLINE nodes are excluded from live power totals.
 
-The existing pricing formula is base price INR 8.00 multiplied by supply/demand (clamped to 0.75-1.50), peak factor and weather factor. Peak hours use the server's local clock: 18:00 up to 22:00, multiplier 1.20; otherwise 1.00. Weather is a neutral simulated 1.00. Prices and total charges are rounded to two decimal places. The displayed estimate can differ from the execution-time receipt if inputs change.
+The existing pricing formula is base price INR 8.00 multiplied by supply/demand (clamped to 0.75-1.50), peak factor and weather factor. Peak hours use the server's local clock: 18:00 up to 22:00, multiplier 1.20; otherwise 1.00. The weather factor is intentionally simulated as a neutral factor of 1.0. Prices and total charges are rounded to two decimal places. The displayed estimate can differ from the execution-time receipt if inputs change.
 
 A trade opens **one JDBC connection**, disables auto-commit, and locks both nodes with `SELECT ... FOR UPDATE` in node-ID order. Java validates status, energy, buyer funds and capacity. It then updates both nodes, inserts the trade and inserts the success audit on that same connection before `commit()`.
 
 An exception before commit triggers `rollback()`, preventing partial energy/fund transfers. A failure audit uses a fresh connection after rollback. Row locks prevent simultaneous trades from overselling the same stored energy. `current_output_kw` is never changed by trading, so grid power can remain unchanged after a successful trade.
 
-Load shedding locks its node snapshot, protects Priority 1, and sheds ONLINE consumers in priority order 4, 3, 2 until the deficit is covered or eligible loads run out. Status updates and audit events commit together. THROTTLED represents fully excluded demand. No deficit means no changes. Restoring shed nodes is currently a manual database/console operation.
+Load shedding locks its node snapshot, protects Priority 1, and sheds ONLINE consumers in priority order 4, 3, 2 until the deficit is covered or eligible loads run out. Status updates and audit events commit together. THROTTLED nodes are treated as fully excluded demand in this simplified model. No deficit means no changes. Restoring shed nodes currently requires a manual database update.
 
 ## Verification
 
-With ApiServer running, use a second terminal in the repository root:
+No automated test source files are currently included. Compile and run `Main` using the setup commands above to check the connection and read current grid/pricing values without changing database records.
+
+With ApiServer running, use a second PowerShell terminal for read-only API checks:
 
 ```powershell
-java -cp "build;lib/*" TestServiceRules
-java -cp "build;lib/*" TestIntegration
+Invoke-RestMethod http://localhost:8080/api/nodes
+Invoke-RestMethod http://localhost:8080/api/grid-status
+Invoke-RestMethod http://localhost:8080/api/pricing
+Invoke-RestMethod http://localhost:8080/api/audit-logs
 ```
 
-`TestServiceRules` runs eleven database-free boundary/JSON checks, including fractional reserve boundaries. `TestIntegration` uses unique temporary nodes, exercises the API and actual JDBC persistence, and removes its own nodes/trades/audits in a `finally` block. Run it while nobody else is changing the simulation: it compares all original node records before and after. Its live shedding scenario requires an initially positive reserve and uses a first-sorted Priority 4 test load, leaving original nodes unchanged. Extended decimal and Priority 4/3/2 shedding checks run only when no original ONLINE consumer is eligible for shedding.
+Open the frontend and check connection status, refresh, node filters, navigation and existing transaction receipts. Node registration, trade submission and load shedding change the database; they are not part of these read-only checks.
 
-Verified in this environment: compilation, 11 service checks, 139 integration checks, all API routes, CORS/preflight, successful/rejected trades, concurrent oversell prevention, registration, audit retrieval, stable/deficit states and load shedding. Trade checks cover all eight business rejection cases, unchanged node records, no inserted trade on rejection, separate failure audits, and exact persisted receipt costs. Twenty headless Chrome checks also verified live rendering, themes, filters, navigation, the modal, mobile width, disconnected state and refresh recovery without JavaScript exceptions, plus real form registration, a committed trade/receipt/audit and a rejected trade. Browser test fixtures were removed afterward. A controlled JavaScript check also reproduced overlapping mutation refreshes in the previous implementation and verified that they now run sequentially.
+To verify the required password guard, open a separate PowerShell terminal in the repository root and run:
+
+```powershell
+Remove-Item Env:DB_PASSWORD -ErrorAction SilentlyContinue
+java -cp "build;lib/*" Main
+```
+
+The exception includes `DB_PASSWORD must be configured` before any database connection is attempted. Keep the configured API terminal open, or set `DB_PASSWORD` again before normal use.
 
 ## Project structure
 
@@ -122,7 +137,7 @@ Verified in this environment: compilation, 11 service checks, 139 integration ch
 backend/
   ApiServer.java              HTTP routing, form validation and responses
   Json.java                   Small response JSON writer
-  DBConnection.java           Existing PostgreSQL connection
+  DBConnection.java           Environment-configured PostgreSQL connection
   GridNode.java               Node model
   GridNodeDAO.java             Node persistence
   EnergyTrade.java             Existing trade model
@@ -132,13 +147,13 @@ backend/
   GridStabilityService.java    Power totals and status
   LoadSheddingService.java     Priority-based demand shedding
   AuditLogDAO.java             Audit insertion/retrieval
-  Main.java, Test*.java        Console examples and checks
+  Main.java                   Read-only grid and pricing console demo
 frontend/
-  index.html, style.css, app.js
+  index.html
+  style.css
+  app.js
 lib/
   postgresql-42.7.3.jar
-database/                     Existing schema managed in PostgreSQL
-build/                        Local compiled/test artifacts (ignored)
 ```
 
 This is an educational smart micro-grid simulation. It models stored energy and power separately; it does not model real electrical dispatch or use real weather telemetry. A lost HTTP response can leave the client unsure whether a write completed: refresh and inspect the audit trail before retrying. Deliberate mid-commit database/network failure injection and physical-device testing were not performed.
