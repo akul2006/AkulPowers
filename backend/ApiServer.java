@@ -1,3 +1,5 @@
+//$env:DB_PASSWORD="your_postgresql_password" - run this first in PowerShell to set the password for the PostgreSQL database before running the application.
+
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
