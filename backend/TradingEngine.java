@@ -49,7 +49,8 @@ public class TradingEngine {
                     if (!"ONLINE".equals(buyer.getStatus())) throw new IllegalArgumentException("Buyer node is not online.");
                     if (seller.getAvailableEnergyKwh() < energy) throw new IllegalArgumentException("Seller does not have enough energy.");
                     if (buyer.getBalance() < cost) throw new IllegalArgumentException("Buyer does not have enough balance.");
-                    if (buyer.getAvailableEnergyKwh() + energy > buyer.getMaxCapacityKwh())
+                    if (BigDecimal.valueOf(buyer.getAvailableEnergyKwh()).add(BigDecimal.valueOf(energy))
+                            .compareTo(BigDecimal.valueOf(buyer.getMaxCapacityKwh())) > 0)
                         throw new IllegalArgumentException("Buyer does not have enough energy capacity.");
                     if (seller.getBalance() + cost >= 10000000000.0)
                         throw new IllegalArgumentException("Trade exceeds the seller account balance limit.");

@@ -15,7 +15,9 @@ public class TestServiceRules {
         check(pricing.calculatePrice(0, 100, false, 1) == 12);
         check(pricing.calculatePrice(100, 120, true, 1.05) == 12.10);
         check(Json.stringify("\"\\\n\t\u0001").equals("\"\\\"\\\\\\n\\t\\u0001\""));
-        System.out.println("PASS: 9 service/JSON checks.");
+        check(service.calculate(List.of(node(0.3, "ONLINE"), node(-0.1, "ONLINE"), node(-0.2, "ONLINE"))).status().equals("WARNING"));
+        check(service.calculate(List.of(node(5.1, "ONLINE"), node(0.2, "ONLINE"), node(-0.3, "ONLINE"))).status().equals("WARNING"));
+        System.out.println("PASS: 11 service/JSON checks.");
     }
     private static GridNode node(double output, String status) {
         return new GridNode("TEST", "Test", "BATTERY_STORAGE", "Test", 0, 100, output, 0, 2, status);

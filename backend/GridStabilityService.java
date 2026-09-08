@@ -1,5 +1,6 @@
 import java.util.List;
 import java.util.Map;
+import java.math.BigDecimal;
 
 public class GridStabilityService {
     public record GridStatus(double generation, double consumption, double netReserve, String status) {
@@ -15,13 +16,15 @@ public class GridStabilityService {
 
     // THROTTLED means fully shed: only ONLINE nodes participate in live power totals.
     public GridStatus calculate(List<GridNode> nodes) {
-        double generation = 0, consumption = 0;
+        BigDecimal generated = BigDecimal.ZERO, consumed = BigDecimal.ZERO;
         for (GridNode node : nodes) {
             if (!"ONLINE".equals(node.getStatus())) continue;
-            if (node.getCurrentOutputKw() > 0) generation += node.getCurrentOutputKw();
-            else consumption -= node.getCurrentOutputKw();
+            BigDecimal output = BigDecimal.valueOf(node.getCurrentOutputKw());
+            if (output.signum() > 0) generated = generated.add(output);
+            else consumed = consumed.subtract(output);
         }
-        double reserve = generation - consumption;
+        double generation = generated.doubleValue(), consumption = consumed.doubleValue();
+        double reserve = generated.subtract(consumed).doubleValue();
         String status = reserve > 5 ? "STABLE" : reserve >= 0 ? "WARNING" : "DEFICIT";
         return new GridStatus(generation, consumption, reserve, status);
     }

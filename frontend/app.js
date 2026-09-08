@@ -26,6 +26,7 @@ const state = {
 
 const API_BASE = 'http://localhost:8080/api';
 let refreshPromise = null;
+let emptyTradeReceiptHtml = '';
 
 async function apiRequest(path, form) {
   let response;
@@ -67,7 +68,7 @@ async function loadAuditLogsFromBackend() {
 }
 
 async function refreshAllData(afterMutation = false) {
-  if (refreshPromise) {
+  while (refreshPromise) {
     if (!afterMutation) return refreshPromise;
     await refreshPromise;
   }
@@ -256,7 +257,8 @@ function renderPriorityCards() {
     if (node.status === 'OFFLINE') statusBadgeClass = 'badge-offline';
 
     const pClass = node.priority === 1 ? 'p1-badge' : node.priority === 2 ? 'p2-badge' : node.priority === 3 ? 'p3-badge' : 'p4-badge';
-    const pTag = node.priority === 1 ? 'Protected from load shedding' : node.status === 'THROTTLED' ? 'Excluded from active demand' : 'Eligible for shedding during deficit';
+    const pTag = node.priority === 1 ? 'Protected from load shedding' : node.status === 'THROTTLED' ? 'Excluded from active demand'
+      : node.status === 'ONLINE' && node.output < 0 ? 'Eligible for shedding during deficit' : 'Not an active consuming node';
 
     return `
       <div class="node-status-card">
@@ -473,6 +475,15 @@ function updateNodeTradeInfo() {
 }
 
 /** Render Audit Logs Table */
+function hasCommittedReceipt(log) {
+  return log.event === 'ENERGY_TRADE' && log.status === 'COMMITTED'
+    && [log.id, log.relatedTradeId, log.seller, log.buyer].every(value =>
+      typeof value === 'string' && value.trim() !== '' && value !== '—')
+    && [log.energyKwh, log.pricePerKwh, log.totalCost].every(value =>
+      value != null && String(value).trim() !== '' && Number.isFinite(Number(value)))
+    && Number(log.energyKwh) > 0 && Number(log.pricePerKwh) > 0 && Number(log.totalCost) >= 0;
+}
+
 function renderAuditLogs() {
   const tbody = $('auditTableBody');
   if (!tbody) return;
@@ -494,16 +505,41 @@ function renderAuditLogs() {
         <td><strong style="font-family: var(--font-mono);">${escapeHtml(log.cost)}</strong></td>
         <td><span class="audit-status-badge ${statusClass}">${escapeHtml(log.status)}</span></td>
         <td style="color: var(--text-muted); font-size: 0.8rem;">${escapeHtml(log.details)}</td>
+        <td>${hasCommittedReceipt(log) ? `<button type="button" class="btn btn-secondary receipt-action" data-audit-id="${escapeHtml(log.id)}">View Receipt</button>` : ''}</td>
       </tr>
     `;
   }).join('');
+}
+
+function handleAuditReceiptClick(event) {
+  const button = event.target.closest('button[data-audit-id]');
+  if (!button) return;
+  const log = state.audits.find(entry => entry.id === button.dataset.auditId);
+  if (!log || !hasCommittedReceipt(log)) return;
+  renderTradeReceiptSuccess(log.relatedTradeId, log.seller, log.buyer,
+    log.energyKwh, log.pricePerKwh, log.totalCost);
+  document.querySelector('.nav-btn[data-target="trade"]').click();
+  requestAnimationFrame(() => {
+    const receipt = $('tradeResultContainer');
+    receipt.focus({ preventScroll: true });
+    receipt.scrollIntoView({ behavior: 'instant', block: 'center' });
+  });
+}
+
+function resetTradeForm({ clearReceipt = false } = {}) {
+  $('sellerSelect').value = '';
+  $('buyerSelect').value = '';
+  $('tradeAmount').value = '';
+  updateNodeTradeInfo();
+  updateEstimatedCost();
+  if (clearReceipt) $('tradeResultContainer').innerHTML = emptyTradeReceiptHtml;
 }
 
 /** Recalculate Estimated Transaction Cost */
 function updateEstimatedCost() {
   const amount = Number($('tradeAmount')?.value) || 0;
   const metrics = calculateGridMetrics();
-  const estimated = amount * metrics.dynamicPrice;
+  const estimated = amount === 0 ? 0 : amount * metrics.dynamicPrice;
   const costEl = $('estimatedCost');
   if (costEl) costEl.textContent = formatCurrency(estimated);
 }
@@ -523,6 +559,7 @@ async function handleTradeExecution(e) {
       buyerNodeId: $('buyerSelect').value, energyKwh: $('tradeAmount').value });
     renderTradeReceiptSuccess(result.tradeId, result.sellerNodeId, result.buyerNodeId,
       result.energyKwh, result.pricePerKwh, result.totalCost);
+    resetTradeForm();
     showToast(result.message, 'success');
   } catch (error) {
     renderTradeReceiptRollback('Not assigned', error.message, error.httpStatus === 400 || error.httpStatus === 404);
@@ -743,6 +780,7 @@ function updateTimestamp() {
 // 6. INITIALIZATION & EVENT LISTENERS
 // ==========================================
 function initApp() {
+  emptyTradeReceiptHtml = $('tradeResultContainer').innerHTML;
   // Theme & Navigation
   initTheme();
   initNavigation();
@@ -777,7 +815,11 @@ function initApp() {
   });
 
   // Refresh Button
-  $('refreshBtn')?.addEventListener('click', () => refreshAllData());
+  $('refreshBtn')?.addEventListener('click', () => {
+    resetTradeForm({ clearReceipt: true });
+    refreshAllData();
+  });
+  $('auditTableBody')?.addEventListener('click', handleAuditReceiptClick);
   $('loadSheddingBtn')?.addEventListener('click', handleLoadShedding);
 
   // Initial Full Render

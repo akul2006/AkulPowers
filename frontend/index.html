@@ -667,12 +667,12 @@
               </div>
             </div>
 
-            <div id="tradeResultContainer" class="trade-result-content">
+            <div id="tradeResultContainer" class="trade-result-content" tabindex="-1">
               <!-- Initial Result State -->
               <div class="result-placeholder">
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="20" height="16" rx="2"></rect><line x1="6" y1="8" x2="10" y2="8"></line><line x1="6" y1="12" x2="18" y2="12"></line><line x1="6" y1="16" x2="14" y2="16"></line></svg>
-                <p>No trade executed in this session.</p>
-                <small>Select nodes and execute a trade to inspect the JDBC transaction receipt.</small>
+                <p>No transaction receipt selected.</p>
+                <small>Execute a trade or select View Receipt in Audit Logs.</small>
               </div>
             </div>
           </div>
@@ -704,6 +704,7 @@
                   <th>Cost</th>
                   <th>Status</th>
                   <th>Details</th>
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody id="auditTableBody">

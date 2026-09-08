@@ -1455,6 +1455,12 @@ select {
   border-color: var(--border-subtle);
 }
 
+.receipt-action {
+  padding: 6px 10px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
 .btn-trade-execute {
   background: linear-gradient(135deg, #10b981, #059669);
   color: #ffffff;
