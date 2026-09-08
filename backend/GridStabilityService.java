@@ -14,7 +14,7 @@ public class GridStabilityService {
         return calculate(new GridNodeDAO().getAllNodes());
     }
 
-    // THROTTLED means fully shed: only ONLINE nodes participate in live power totals.
+    
     public GridStatus calculate(List<GridNode> nodes) {
         BigDecimal generated = BigDecimal.ZERO, consumed = BigDecimal.ZERO;
         for (GridNode node : nodes) {

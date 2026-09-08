@@ -9,7 +9,7 @@ public class LoadSheddingService {
         try (Connection c = DBConnection.getConnection()) {
             c.setAutoCommit(false);
             try {
-                // Lock the snapshot and only update status, never overwrite traded balances/energy.
+                
                 List<GridNode> nodes = dao.getAllNodes(c, true);
                 double deficit = -stability.calculate(nodes).netReserve();
                 List<String> shed = new ArrayList<>();

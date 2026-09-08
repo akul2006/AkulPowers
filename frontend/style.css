@@ -1,12 +1,8 @@
-/* ==========================================================================
-   FLUXGRID OS — Smart Micro-Grid Energy & P2P Trading Engine
-   by Akul Powers
-   Stylesheet — Vanilla CSS with Theme Support
-   ========================================================================== */
 
-/* --- CSS Variables: Design Tokens & Themes --- */
+
+
 :root {
-  /* Common Palette */
+  
   --teal: #10b981;
   --teal-light: #34d399;
   --teal-glow: rgba(16, 185, 129, 0.16);
@@ -23,7 +19,7 @@
   --purple: #8b5cf6;
   --purple-bg: rgba(139, 92, 246, 0.1);
 
-  /* Typography & Sizing */
+  
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   --radius-sm: 6px;
@@ -33,7 +29,7 @@
   --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* DARK THEME (Default) */
+
 [data-theme="dark"] {
   --bg-app: #080e18;
   --bg-sidebar: #0b1320;
@@ -60,7 +56,7 @@
   --input-bg: #0b1422;
 }
 
-/* LIGHT THEME */
+
 [data-theme="light"] {
   --bg-app: #f4f7fb;
   --bg-sidebar: #ffffff;
@@ -87,7 +83,7 @@
   --input-bg: #ffffff;
 }
 
-/* --- Base & Reset --- */
+
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
@@ -109,7 +105,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* --- Utility Classes --- */
+
 .text-teal { color: var(--teal) !important; }
 .text-amber { color: var(--amber) !important; }
 .text-danger { color: var(--danger) !important; }
@@ -117,7 +113,7 @@ body {
 .text-purple { color: var(--purple) !important; }
 .hidden { display: none !important; }
 
-/* --- SIDEBAR --- */
+
 .sidebar {
   width: 250px;
   background-color: var(--bg-sidebar);
@@ -281,7 +277,7 @@ body {
   color: var(--text-muted);
 }
 
-/* --- MAIN WRAPPER & TOPBAR --- */
+
 .main-wrapper {
   margin-left: 250px;
   flex: 1;
@@ -426,7 +422,7 @@ body {
   transform: translateY(-1px);
 }
 
-/* --- MAIN CONTENT & SECTIONS --- */
+
 .main-content {
   flex: 1;
   padding: 28px 32px 48px;
@@ -479,7 +475,7 @@ body {
   margin-top: 4px;
 }
 
-/* Status Badges */
+
 .status-badge {
   font-size: 0.72rem;
   font-weight: 800;
@@ -507,7 +503,7 @@ body {
   color: var(--danger);
 }
 
-/* --- 6 PRIMARY METRIC CARDS --- */
+
 .metrics-grid {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
@@ -612,7 +608,7 @@ body {
   gap: 4px;
 }
 
-/* --- DASHBOARD TWO-COLUMN GRID --- */
+
 .dashboard-grid {
   display: grid;
   grid-template-columns: 1.45fr 1fr;
@@ -649,7 +645,7 @@ body {
   margin-top: 2px;
 }
 
-/* --- ENERGY FLOW CHART --- */
+
 .chart-legend {
   display: flex;
   align-items: center;
@@ -765,7 +761,7 @@ body {
 .fill-teal { background-color: var(--teal); }
 .fill-amber { background-color: var(--amber); }
 
-/* --- DYNAMIC PRICING ENGINE PANEL --- */
+
 .formula-tag {
   font-size: 0.68rem;
   font-weight: 800;
@@ -897,7 +893,7 @@ body {
   border-left: 3px solid var(--amber);
 }
 
-/* --- 4 SUMMARY CARDS --- */
+
 .summary-cards-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -941,7 +937,7 @@ body {
   margin-top: 2px;
 }
 
-/* --- GRID STABILITY & LOAD SHEDDING PANEL --- */
+
 .stability-panel {
   margin-bottom: 24px;
 }
@@ -995,7 +991,7 @@ body {
   color: var(--teal);
 }
 
-/* Priority Hierarchy Cards */
+
 .priority-levels-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -1140,7 +1136,7 @@ body {
 .badge-throttled { background: var(--amber-bg); color: var(--amber); border: 1px solid rgba(245, 158, 11, 0.3); }
 .badge-offline { background: var(--danger-bg); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); }
 
-/* --- 2. NODE REGISTRY STYLES --- */
+
 .filter-card {
   background-color: var(--card-bg);
   border: 1px solid var(--border-color);
@@ -1279,7 +1275,7 @@ select {
 .type-ev { background: rgba(139, 92, 246, 0.12); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.25); }
 .type-battery { background: rgba(16, 185, 129, 0.12); color: var(--teal-light); border: 1px solid rgba(16, 185, 129, 0.25); }
 
-/* --- 3. P2P ENERGY TRADING STYLES --- */
+
 .trade-grid {
   display: grid;
   grid-template-columns: 1.15fr 1fr;
@@ -1417,7 +1413,7 @@ select {
   font-size: 1.1rem;
 }
 
-/* Button Styles */
+
 .btn {
   display: inline-flex;
   align-items: center;
@@ -1507,7 +1503,7 @@ select {
   color: var(--teal);
 }
 
-/* Transaction Result Receipt */
+
 .result-placeholder {
   display: flex;
   flex-direction: column;
@@ -1613,7 +1609,7 @@ select {
   line-height: 1.45;
 }
 
-/* --- 4. AUDIT LOGS STYLES --- */
+
 .audit-status-badge {
   font-size: 0.7rem;
   font-weight: 800;
@@ -1626,7 +1622,7 @@ select {
 .audit-rollback { background: var(--danger-bg); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); }
 .audit-success { background: var(--blue-bg); color: var(--blue); border: 1px solid rgba(59, 130, 246, 0.3); }
 
-/* --- MODAL DIALOG --- */
+
 .custom-modal {
   border: none;
   background: transparent;
@@ -1738,7 +1734,7 @@ select {
   border-top: 1px solid var(--border-color);
 }
 
-/* --- TOAST NOTIFICATIONS --- */
+
 .toast-container {
   position: fixed;
   bottom: 24px;
@@ -1775,7 +1771,7 @@ select {
   to { transform: translateX(0); opacity: 1; }
 }
 
-/* --- RESPONSIVE BREAKPOINTS --- */
+
 @media (max-width: 1300px) {
   .metrics-grid {
     grid-template-columns: repeat(3, 1fr);

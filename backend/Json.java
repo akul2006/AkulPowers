@@ -2,7 +2,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-/** Small JSON writer for API responses; form requests need no JSON parser. */
+
 public class Json {
     public static String stringify(Object value) {
         if (value == null) return "null";

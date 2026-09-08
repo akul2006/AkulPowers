@@ -3,7 +3,7 @@ import java.util.Map;
 
 public class PricingEngine {
     private static final double BASE_PRICE = 8.00;
-    // Simple simulation: neutral weather and local evening peak from 18:00 to 22:00.
+    
     public static final double WEATHER_FACTOR = 1.0;
     public static boolean isPeakHour() {
         int hour = LocalTime.now().getHour();

@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <!-- SIDEBAR NAVIGATION -->
+  
   <aside class="sidebar" id="sidebar">
     <div class="brand">
       <div class="brand-icon">
@@ -55,9 +55,9 @@
     </div>
   </aside>
 
-  <!-- MAIN VIEW CONTAINER -->
+  
   <div class="main-wrapper">
-    <!-- TOP HEADER -->
+    
     <header class="topbar">
       <div class="topbar-left">
         <button class="menu-toggle" id="menuToggle" aria-label="Toggle Navigation">
@@ -70,19 +70,19 @@
       </div>
 
       <div class="topbar-right">
-        <!-- Grid Status Live Indicator -->
+        
         <div class="header-status-pill" id="headerGridStatusPill">
           <span class="pulse-dot"></span>
           <span id="headerGridStatusText">GRID STABLE</span>
         </div>
 
-        <!-- Timestamp -->
+        
         <div class="timestamp-box">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
           <span>Updated <b id="lastUpdatedTime">10:42 PM</b></span>
         </div>
 
-        <!-- Theme Toggle Button -->
+        
         <button id="themeToggleBtn" class="icon-btn theme-toggle" title="Toggle Light/Dark Theme" aria-label="Toggle Light/Dark Theme">
           <svg id="themeIconSun" class="theme-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="5"></circle>
@@ -100,7 +100,7 @@
           </svg>
         </button>
 
-        <!-- Refresh Button -->
+        
         <button id="refreshBtn" class="refresh-btn" title="Refresh Live Metrics">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="23 4 23 10 17 10"></polyline>
@@ -113,9 +113,9 @@
     </header>
 
     <main class="main-content">
-      <!-- ================= 1. CONTROL ROOM / DASHBOARD ================= -->
+      
       <section id="dashboard" class="page-section active-section">
-        <!-- Section Title Bar -->
+        
         <div class="section-header">
           <div>
             <span class="section-tag">REAL-TIME TELEMETRY</span>
@@ -126,9 +126,9 @@
           </div>
         </div>
 
-        <!-- 6 Primary Metric Cards -->
+        
         <div class="metrics-grid">
-          <!-- 1. Total Generation -->
+          
           <div class="metric-card card-teal">
             <div class="metric-head">
               <span class="metric-label">TOTAL GENERATION</span>
@@ -145,7 +145,7 @@
             </div>
           </div>
 
-          <!-- 2. Total Consumption -->
+          
           <div class="metric-card card-amber">
             <div class="metric-head">
               <span class="metric-label">TOTAL CONSUMPTION</span>
@@ -162,7 +162,7 @@
             </div>
           </div>
 
-          <!-- 3. Net Reserve -->
+          
           <div class="metric-card card-deficit" id="reserveCard">
             <div class="metric-head">
               <span class="metric-label">NET RESERVE</span>
@@ -178,7 +178,7 @@
             </div>
           </div>
 
-          <!-- 4. Active Nodes -->
+          
           <div class="metric-card card-blue">
             <div class="metric-head">
               <span class="metric-label">ACTIVE NODES</span>
@@ -194,7 +194,7 @@
             </div>
           </div>
 
-          <!-- 5. Dynamic Price -->
+          
           <div class="metric-card card-purple">
             <div class="metric-head">
               <span class="metric-label">DYNAMIC PRICE</span>
@@ -210,7 +210,7 @@
             </div>
           </div>
 
-          <!-- 6. Grid Status -->
+          
           <div class="metric-card card-status">
             <div class="metric-head">
               <span class="metric-label">GRID STATUS</span>
@@ -227,9 +227,9 @@
           </div>
         </div>
 
-        <!-- Two Column Main Dashboard Grid: Energy Flow Chart & Dynamic Pricing Engine -->
+        
         <div class="dashboard-grid">
-          <!-- ENERGY FLOW CHART PANEL -->
+          
           <div class="panel-card chart-panel">
             <div class="panel-header">
               <div>
@@ -248,7 +248,7 @@
               </div>
             </div>
 
-            <!-- Crisp Responsive SVG Chart -->
+            
             <div class="chart-container">
               <svg id="energySvgChart" class="energy-chart-svg" viewBox="0 0 600 240" preserveAspectRatio="none">
                 <defs>
@@ -262,27 +262,27 @@
                   </linearGradient>
                 </defs>
 
-                <!-- Grid horizontal lines -->
+                
                 <line x1="40" y1="30" x2="580" y2="30" class="chart-grid-line" />
                 <line x1="40" y1="80" x2="580" y2="80" class="chart-grid-line" />
                 <line x1="40" y1="130" x2="580" y2="130" class="chart-grid-line" />
                 <line x1="40" y1="180" x2="580" y2="180" class="chart-grid-line" />
 
-                <!-- Y-axis labels -->
+                
                 <text x="32" y="34" class="chart-axis-text">80 kW</text>
                 <text x="32" y="84" class="chart-axis-text">60 kW</text>
                 <text x="32" y="134" class="chart-axis-text">40 kW</text>
                 <text x="32" y="184" class="chart-axis-text">20 kW</text>
 
-                <!-- Area Fills -->
+                
                 <path id="chartGenArea" class="chart-area-gen" d=""></path>
                 <path id="chartConsArea" class="chart-area-cons" d=""></path>
 
-                <!-- Lines -->
+                
                 <path id="chartGenLine" class="chart-line-gen" d=""></path>
                 <path id="chartConsLine" class="chart-line-cons" d=""></path>
 
-                <!-- Time Axis Labels -->
+                
                 <text x="45" y="215" class="chart-axis-text">00:00</text>
                 <text x="135" y="215" class="chart-axis-text">04:00</text>
                 <text x="225" y="215" class="chart-axis-text">08:00</text>
@@ -293,7 +293,7 @@
               </svg>
             </div>
 
-            <!-- Live Bars Snapshot -->
+            
             <div class="current-snapshot-bars">
               <div class="bar-item">
                 <div class="bar-info">
@@ -316,7 +316,7 @@
             </div>
           </div>
 
-          <!-- DYNAMIC PRICING ENGINE PANEL -->
+          
           <div class="panel-card pricing-panel">
             <div class="panel-header">
               <div>
@@ -358,7 +358,7 @@
               </div>
             </div>
 
-            <!-- Formula Box -->
+            
             <div class="formula-box">
               <div class="formula-title">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
@@ -375,7 +375,7 @@
           </div>
         </div>
 
-        <!-- 4 Energy Summary Cards -->
+        
         <p class="panel-subtitle">Sample daily summaries (illustrative, not live totals)</p>
         <div class="summary-cards-grid">
           <div class="summary-card">
@@ -416,7 +416,7 @@
           </div>
         </div>
 
-        <!-- GRID STABILITY & LOAD SHEDDING PANEL -->
+        
         <div class="panel-card stability-panel">
           <div class="panel-header">
             <div>
@@ -428,7 +428,7 @@
 
           <button id="loadSheddingBtn" type="button" class="btn btn-secondary">Run Load Shedding</button>
 
-          <!-- Stability Balance Bar -->
+          
           <div class="stability-stats-bar">
             <div class="stability-stat">
               <span>Generation:</span>
@@ -446,12 +446,12 @@
             </div>
           </div>
 
-          <!-- Stability Message Alert -->
+          
           <div id="stabilityMessage" class="stability-alert-box alert-danger">
             <strong>⚠ GRID DEFICIT DETECTED:</strong> Current demand exceeds generation by 10.0 kW. Load shedding protocol initiated.
           </div>
 
-          <!-- Priority Levels Hierarchy -->
+          
           <div class="priority-levels-grid">
             <div class="priority-level-card level-p1">
               <div class="priority-level-head">
@@ -490,17 +490,17 @@
             </div>
           </div>
 
-          <!-- Example Nodes Live Status Underneath -->
+          
           <div class="priority-nodes-container">
             <h4 class="sub-heading">Real-Time Dispatch State by Priority</h4>
             <div id="priorityCards" class="priority-nodes-grid">
-              <!-- Dynamically rendered -->
+              
             </div>
           </div>
         </div>
       </section>
 
-      <!-- ================= 2. NODE REGISTRY ================= -->
+      
       <section id="nodes" class="page-section">
         <div class="section-header">
           <div>
@@ -514,7 +514,7 @@
           </button>
         </div>
 
-        <!-- Filter Bar -->
+        
         <div class="filter-card">
           <div class="search-input-wrap">
             <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
@@ -547,7 +547,7 @@
           </div>
         </div>
 
-        <!-- Node Registry Table -->
+        
         <div class="table-card">
           <div class="table-responsive">
             <table class="data-table">
@@ -566,14 +566,14 @@
                 </tr>
               </thead>
               <tbody id="nodesTableBody">
-                <!-- Dynamically populated -->
+                
               </tbody>
             </table>
           </div>
         </div>
       </section>
 
-      <!-- ================= 3. P2P ENERGY TRADING ================= -->
+      
       <section id="trade" class="page-section">
         <div class="section-header">
           <div>
@@ -584,7 +584,7 @@
         </div>
 
         <div class="trade-grid">
-          <!-- Trade Execution Form -->
+          
           <div class="panel-card trade-form-card">
             <div class="panel-header">
               <div>
@@ -625,7 +625,7 @@
                   <input id="tradeAmount" type="number" min="0.01" step="0.01" value="20.0" required />
                   <span class="input-suffix">kWh</span>
                 </div>
-                <!-- Quick Amount Presets -->
+                
                 <div class="amount-presets">
                   <button type="button" class="preset-btn" data-amt="5">5 kWh</button>
                   <button type="button" class="preset-btn" data-amt="10">10 kWh</button>
@@ -634,7 +634,7 @@
                 </div>
               </div>
 
-              <!-- Price & Cost Breakdown Card -->
+              
               <div class="trade-cost-breakdown">
                 <div class="breakdown-row">
                   <span class="breakdown-label">Current Dynamic Tariff:</span>
@@ -658,7 +658,7 @@
             </div>
           </div>
 
-          <!-- Latest Transaction Result -->
+          
           <div class="panel-card trade-result-card">
             <div class="panel-header">
               <div>
@@ -668,7 +668,7 @@
             </div>
 
             <div id="tradeResultContainer" class="trade-result-content" tabindex="-1">
-              <!-- Initial Result State -->
+              
               <div class="result-placeholder">
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="20" height="16" rx="2"></rect><line x1="6" y1="8" x2="10" y2="8"></line><line x1="6" y1="12" x2="18" y2="12"></line><line x1="6" y1="16" x2="14" y2="16"></line></svg>
                 <p>No transaction receipt selected.</p>
@@ -679,7 +679,7 @@
         </div>
       </section>
 
-      <!-- ================= 4. AUDIT LOGS ================= -->
+      
       <section id="audit" class="page-section">
         <div class="section-header">
           <div>
@@ -708,7 +708,7 @@
                 </tr>
               </thead>
               <tbody id="auditTableBody">
-                <!-- Dynamically populated -->
+                
               </tbody>
             </table>
           </div>
@@ -717,7 +717,7 @@
     </main>
   </div>
 
-  <!-- REGISTER NEW NODE MODAL -->
+  
   <dialog id="nodeModal" class="custom-modal">
     <div class="modal-backdrop-wrap">
       <div class="modal-card">
@@ -797,7 +797,7 @@
     </div>
   </dialog>
 
-  <!-- TOAST NOTIFICATION CONTAINER -->
+  
   <div id="toastContainer" class="toast-container"></div>
 
   <script src="app.js"></script>

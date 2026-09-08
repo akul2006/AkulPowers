@@ -3,7 +3,7 @@ import java.util.*;
 
 public class AuditLogDAO {
     public boolean logEvent(String eventType, String tradeId, String nodeId, String description, String status) {
-        // Failure events use a fresh connection AFTER the business transaction rolls back.
+        
         try (Connection connection = DBConnection.getConnection()) {
             logEvent(connection, eventType, tradeId, nodeId, description, status);
             return true;

@@ -18,7 +18,7 @@ public class ApiServer {
         System.out.println("FluxGrid API running at http://localhost:" + PORT);
     }
 
-    // Common HTTP handling keeps each business endpoint small.
+    
     private static void handleRequest(HttpExchange exchange) throws IOException {
         addCorsHeaders(exchange);
         String path = exchange.getRequestURI().getPath();

@@ -70,7 +70,7 @@ public class GridNodeDAO {
         }
     }
 
-    // Retained for the existing educational console examples.
+    
     public boolean updateNode(GridNode node) {
         String sql = """
                 UPDATE nodes SET name=?, type=?, location=?, available_energy_kwh=?,

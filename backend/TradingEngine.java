@@ -10,7 +10,7 @@ public class TradingEngine {
     private final PricingEngine pricingEngine = new PricingEngine();
     private final AuditLogDAO auditLogDAO = new AuditLogDAO();
 
-    // Preserve the console examples; HTTP callers receive the full receipt instead.
+    
     public boolean processTrade(String sellerId, String buyerId, double energy,
             double generation, double consumption, boolean peakHour, double weatherFactor) {
         TradeResult result = executeTrade(sellerId, buyerId, energy, generation, consumption, peakHour, weatherFactor);
@@ -33,10 +33,10 @@ public class TradingEngine {
             cost = BigDecimal.valueOf(energy).multiply(BigDecimal.valueOf(price))
                     .setScale(2, RoundingMode.HALF_UP).doubleValue();
             try (Connection connection = DBConnection.getConnection()) {
-                // ONE connection owns all locks, energy/fund updates, trade and success audit.
+                
                 connection.setAutoCommit(false);
                 try {
-                    // Consistent lock order avoids deadlocks in opposing trades.
+                    
                     GridNode first = getNodeById(connection, sellerId.compareTo(buyerId) < 0 ? sellerId : buyerId);
                     GridNode second = getNodeById(connection, sellerId.compareTo(buyerId) < 0 ? buyerId : sellerId);
                     GridNode seller = sellerId.compareTo(buyerId) < 0 ? first : second;
@@ -63,7 +63,7 @@ public class TradingEngine {
                     connection.commit();
                     return new TradeResult(true, 200, tradeId, sellerId, buyerId, energy, price, cost, "Trade committed successfully.");
                 } catch (SQLException | RuntimeException e) {
-                    // Roll back before the failure audit uses its own connection.
+                    
                     connection.rollback();
                     throw e;
                 }

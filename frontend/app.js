@@ -4,7 +4,7 @@ const state = {
   pricing: null,
   connected: false,
 
-  // Decorative daily summaries and historical chart points are labelled sample data.
+  
   dailySummary: {
     generatedToday: 684.2,
     consumedToday: 572.8,
@@ -75,7 +75,7 @@ async function refreshAllData(afterMutation = false) {
   refreshPromise = (async () => {
     $('refreshBtn').disabled = true;
     try {
-      // Apply one complete refresh so a failed request cannot mix live and demo state.
+      
       const [nodes, grid, pricing, audits] = await Promise.all([
         loadNodesFromBackend(), loadGridStatusFromBackend(), loadPricingFromBackend(), loadAuditLogsFromBackend()
       ]);
@@ -140,7 +140,7 @@ function getTypeBadgeClass(type) {
 }
 
 function calculateGridMetrics() {
-  // Java owns power totals, status thresholds and tariff factors.
+  
   const grid = state.grid;
   const status = grid?.status || 'LOADING';
   return {
@@ -152,15 +152,15 @@ function calculateGridMetrics() {
   };
 }
 
-// ==========================================
-// 4. RENDERING FUNCTIONS
-// ==========================================
 
-/** Render Dashboard Top Metrics, Pricing & Load Shedding */
+
+
+
+
 function renderDashboard() {
   const metrics = calculateGridMetrics();
 
-  // 1. Primary Metrics Cards
+  
   $('generationValue').textContent = formatNumber(metrics.generation);
   $('consumptionValue').textContent = formatNumber(metrics.consumption);
 
@@ -182,7 +182,7 @@ function renderDashboard() {
   $('priceValue').textContent = '₹' + formatNumber(metrics.dynamicPrice, 2);
   $('gridStatusText').textContent = metrics.status;
 
-  // Topbar Status & Badges
+  
   const gridStatusBadge = $('gridStatusBadge');
   gridStatusBadge.textContent = metrics.status;
   gridStatusBadge.className = `status-badge ${metrics.badgeClass}`;
@@ -192,14 +192,14 @@ function renderDashboard() {
   headerStatusText.textContent = metrics.status;
   headerStatusPill.className = 'header-status-pill ' + (metrics.status === 'DEFICIT' ? 'danger' : metrics.status !== 'STABLE' ? '' : 'stable');
 
-  // 2. Snapshot Bars
+  
   const maxKw = state.grid ? Math.max(metrics.generation, metrics.consumption, 70) : 70;
   $('generationBar').style.width = `${state.grid ? (metrics.generation / maxKw) * 100 : 0}%`;
   $('consumptionBar').style.width = `${state.grid ? (metrics.consumption / maxKw) * 100 : 0}%`;
   $('generationBarText').textContent = `${formatNumber(metrics.generation)} kW`;
   $('consumptionBarText').textContent = `${formatNumber(metrics.consumption)} kW`;
 
-  // 3. Dynamic Pricing Panel
+  
   $('pricingCurrent').textContent = '₹' + formatNumber(metrics.dynamicPrice, 2);
   $('baseRate').textContent = formatCurrency(state.pricing?.basePrice) + '/kWh';
   $('demandFactor').textContent = formatNumber(state.pricing?.supplyDemandFactor, 2) + '×';
@@ -209,13 +209,13 @@ function renderDashboard() {
   $('priceBadgeAlert').textContent = state.pricing ? 'Current backend tariff' : 'Waiting for pricing';
   $('pricingExplanation').textContent = 'Tariff uses live supply and demand, a local evening peak factor (18:00-22:00), and neutral simulated weather (1.00). The final trade receipt uses the execution-time price.';
 
-  // 4. Energy Summary Cards
+  
   $('generatedToday').textContent = `${formatNumber(state.dailySummary.generatedToday)} kWh`;
   $('consumedToday').textContent = `${formatNumber(state.dailySummary.consumedToday)} kWh`;
   $('renewableShareVal').textContent = `${state.dailySummary.renewableShare}%`;
   $('netEnergyBalance').textContent = `+${formatNumber(state.dailySummary.netBalance)} kWh`;
 
-  // 5. Grid Stability & Load Shedding
+  
   $('stabGen').textContent = `${formatNumber(metrics.generation)} kW`;
   $('stabCons').textContent = `${formatNumber(metrics.consumption)} kW`;
   const stabDeficit = $('stabDeficit');
@@ -233,18 +233,18 @@ function renderDashboard() {
   $('gridStatusFooter').textContent = state.nodes.filter(n => n.status === 'THROTTLED').length + ' nodes throttled';
   $('loadSheddingBtn').disabled = !state.connected;
 
-  // Render Priority Node cards
+  
   renderPriorityCards();
 
-  // Draw Energy SVG Chart
+  
   if (state.grid) renderEnergySvgChart(metrics.generation, metrics.consumption);
 
-  // Update Trade section tariff display
+  
   $('tradePrice').textContent = `₹${formatNumber(metrics.dynamicPrice, 2)} / kWh`;
   updateEstimatedCost();
 }
 
-/** Render Priority Cards under Load Shedding */
+
 function renderPriorityCards() {
   const container = $('priorityCards');
   if (!container) return;
@@ -276,9 +276,9 @@ function renderPriorityCards() {
   }).join('');
 }
 
-/** Draw SVG Energy Flow Chart with Smooth Paths and Gradients */
+
 function renderEnergySvgChart(currentGen, currentCons) {
-  // Chart dimensions in viewBox coordinates
+  
   const width = 600;
   const height = 240;
   const paddingLeft = 55;
@@ -293,7 +293,7 @@ function renderEnergySvgChart(currentGen, currentCons) {
     if (index < 4) label.textContent = formatNumber(maxY * (1 - index / 3), 0) + ' kW';
   });
 
-  // Assemble dynamic points using chartData history + current live metric
+  
   const points = [...state.chartData, { time: 'Now', gen: currentGen, cons: currentCons }];
 
   function getX(index) {
@@ -305,7 +305,7 @@ function renderEnergySvgChart(currentGen, currentCons) {
     return paddingTop + plotHeight - (clamped / maxY) * plotHeight;
   }
 
-  // Build SVG Paths for Generation & Consumption
+  
   let genLineD = `M ${getX(0)} ${getY(points[0].gen)}`;
   let consLineD = `M ${getX(0)} ${getY(points[0].cons)}`;
 
@@ -318,7 +318,7 @@ function renderEnergySvgChart(currentGen, currentCons) {
     const prevYCons = getY(points[i - 1].cons);
     const currYCons = getY(points[i].cons);
 
-    // Smooth Bezier curve control points
+    
     const cp1x = prevX + (currX - prevX) / 2;
     const cp2x = cp1x;
 
@@ -341,11 +341,11 @@ function renderEnergySvgChart(currentGen, currentCons) {
   if (consAreaEl) consAreaEl.setAttribute('d', consAreaD);
 }
 
-/** Render Node Registry Table */
+
 function renderNodesTable() {
   const tbody = $('nodesTableBody');
   if (!tbody) return;
-  // Keep trade choices current even when registry filters match no rows.
+  
   populateTradeDropdowns();
 
   const searchQuery = ($('nodeSearch')?.value || '').trim().toLowerCase();
@@ -419,7 +419,7 @@ function renderNodesTable() {
 
 }
 
-/** Populate Seller and Buyer Dropdown Selects */
+
 function populateTradeDropdowns() {
   const sellerSelect = $('sellerSelect');
   const buyerSelect = $('buyerSelect');
@@ -430,10 +430,10 @@ function populateTradeDropdowns() {
 
   const onlineNodes = state.nodes.filter(n => n.status === 'ONLINE');
 
-  // Sellers: Nodes with energy > 0 or solar/battery
+  
   const sellers = onlineNodes.filter(n => n.type === 'SOLAR_PRODUCER' || n.type === 'BATTERY_STORAGE' || n.energy > 0);
 
-  // Buyers: Any active node
+  
   const buyers = onlineNodes;
 
   sellerSelect.innerHTML = '<option value="">Select Seller (Energy Available)</option>' +
@@ -452,7 +452,7 @@ function populateTradeDropdowns() {
   updateNodeTradeInfo();
 }
 
-/** Update small info hints below trade selects */
+
 function updateNodeTradeInfo() {
   const sellerId = $('sellerSelect')?.value;
   const buyerId = $('buyerSelect')?.value;
@@ -474,7 +474,7 @@ function updateNodeTradeInfo() {
   }
 }
 
-/** Render Audit Logs Table */
+
 function hasCommittedReceipt(log) {
   return log.event === 'ENERGY_TRADE' && log.status === 'COMMITTED'
     && [log.id, log.relatedTradeId, log.seller, log.buyer].every(value =>
@@ -535,7 +535,7 @@ function resetTradeForm({ clearReceipt = false } = {}) {
   if (clearReceipt) $('tradeResultContainer').innerHTML = emptyTradeReceiptHtml;
 }
 
-/** Recalculate Estimated Transaction Cost */
+
 function updateEstimatedCost() {
   const amount = Number($('tradeAmount')?.value) || 0;
   const metrics = calculateGridMetrics();
@@ -544,11 +544,11 @@ function updateEstimatedCost() {
   if (costEl) costEl.textContent = formatCurrency(estimated);
 }
 
-// ==========================================
-// 5. USER INTERACTION & HANDLERS
-// ==========================================
 
-/** Handle P2P Trade Execution */
+
+
+
+
 async function handleTradeExecution(e) {
   e.preventDefault();
   const button = e.currentTarget.querySelector('button[type="submit"]');
@@ -570,7 +570,7 @@ async function handleTradeExecution(e) {
   }
 }
 
-/** Render Success Receipt */
+
 function renderTradeReceiptSuccess(id, seller, buyer, energy, price, total) {
   const container = $('tradeResultContainer');
   if (!container) return;
@@ -616,7 +616,7 @@ function renderTradeReceiptSuccess(id, seller, buyer, energy, price, total) {
   `;
 }
 
-/** Render Rollback Receipt */
+
 function renderTradeReceiptRollback(id, reason, rejected = true) {
   const container = $('tradeResultContainer');
   if (!container) return;
@@ -650,7 +650,7 @@ function renderTradeReceiptRollback(id, reason, rejected = true) {
   `;
 }
 
-/** Register New Node Submission */
+
 async function handleRegisterNode(e) {
   e.preventDefault();
   const button = e.currentTarget.querySelector('button[type="submit"]');
@@ -681,7 +681,7 @@ async function handleLoadShedding() {
   finally { await refreshAllData(true); button.disabled = !state.connected; }
 }
 
-/** Theme Toggle Handler */
+
 function initTheme() {
   const savedTheme = localStorage.getItem('fluxgrid_theme') || 'dark';
   setTheme(savedTheme);
@@ -709,7 +709,7 @@ function setTheme(theme) {
   }
 }
 
-/** Setup Tab Navigation */
+
 function initNavigation() {
   const navButtons = document.querySelectorAll('.nav-btn');
   const sections = document.querySelectorAll('.page-section');
@@ -731,26 +731,26 @@ function initNavigation() {
       const targetSec = $(target);
       if (targetSec) targetSec.classList.add('active-section');
 
-      // Update Topbar Title
+      
       if (titles[target]) {
         $('topbarTitle').textContent = titles[target].title;
         document.querySelector('.topbar-subtitle').textContent = titles[target].subtitle;
       }
 
-      // Close mobile sidebar if open
+      
       $('sidebar')?.classList.remove('open');
 
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
   });
 
-  // Mobile menu toggle
+  
   $('menuToggle')?.addEventListener('click', () => {
     $('sidebar')?.classList.toggle('open');
   });
 }
 
-/** Toast Notifications helper */
+
 function showToast(message, type = 'info') {
   const container = $('toastContainer');
   if (!container) return;
@@ -768,7 +768,7 @@ function showToast(message, type = 'info') {
   }, 3500);
 }
 
-/** Update Live Clock in Header */
+
 function updateTimestamp() {
   const now = new Date();
   const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
@@ -776,36 +776,36 @@ function updateTimestamp() {
   if (timeEl) timeEl.textContent = timeStr;
 }
 
-// ==========================================
-// 6. INITIALIZATION & EVENT LISTENERS
-// ==========================================
+
+
+
 function initApp() {
   emptyTradeReceiptHtml = $('tradeResultContainer').innerHTML;
-  // Theme & Navigation
+  
   initTheme();
   initNavigation();
   $('lastUpdatedTime').textContent = 'Not loaded';
 
-  // Modal handlers
+  
   const modal = $('nodeModal');
   $('openNodeModal')?.addEventListener('click', () => modal?.showModal());
   $('closeNodeModal')?.addEventListener('click', () => modal?.close());
   $('cancelNodeModal')?.addEventListener('click', () => modal?.close());
   $('nodeForm')?.addEventListener('submit', handleRegisterNode);
 
-  // Filter Listeners
+  
   ['nodeSearch', 'typeFilter', 'statusFilter', 'priorityFilter'].forEach(id => {
     $(id)?.addEventListener('input', renderNodesTable);
     $(id)?.addEventListener('change', renderNodesTable);
   });
 
-  // Trade Form Listeners
+  
   $('tradeForm')?.addEventListener('submit', handleTradeExecution);
   $('tradeAmount')?.addEventListener('input', updateEstimatedCost);
   $('sellerSelect')?.addEventListener('change', updateNodeTradeInfo);
   $('buyerSelect')?.addEventListener('change', updateNodeTradeInfo);
 
-  // Preset Buttons
+  
   document.querySelectorAll('.preset-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const amt = btn.dataset.amt;
@@ -814,7 +814,7 @@ function initApp() {
     });
   });
 
-  // Refresh Button
+  
   $('refreshBtn')?.addEventListener('click', () => {
     resetTradeForm({ clearReceipt: true });
     refreshAllData();
@@ -822,7 +822,7 @@ function initApp() {
   $('auditTableBody')?.addEventListener('click', handleAuditReceiptClick);
   $('loadSheddingBtn')?.addEventListener('click', handleLoadShedding);
 
-  // Initial Full Render
+  
   renderDashboard();
   renderNodesTable();
   renderAuditLogs();
@@ -830,5 +830,5 @@ function initApp() {
   refreshAllData();
 }
 
-// Run when DOM is ready
+
 document.addEventListener('DOMContentLoaded', initApp);
